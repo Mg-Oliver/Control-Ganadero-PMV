@@ -1,0 +1,20 @@
+{
+  "project": {
+    "name": "MVP Control Ganadero Bovino",
+    "framework": "Flutter",
+    "language": "Dart",
+    "backend": "Supabase (PostgreSQL)"
+  },
+  "automation": {
+    "taskFile": "task.md",
+    "autoUpdateCheckboxes": true,
+    "requireCleanAnalyze": true,
+    "requirePassingTests": true
+  },
+  "commands": {
+    "analyze": "flutter analyze",
+    "test": "flutter test",
+    "buildWeb": "flutter build web --release",
+    "runLocal": "flutter run -d chrome"
+  }
+}
