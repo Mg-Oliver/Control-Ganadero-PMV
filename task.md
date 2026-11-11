@@ -166,22 +166,46 @@
 ---
 
 ## Fase 9: Rediseño Integral de UI/UX para el Panel de Control (Dashboard Principal)
-- [ ] 9.1 Encabezado y acción principal de registro rápido:
-  - [ ] 9.1.1 Encabezado estilizado en el Panel de Control con título descriptivo y botón destacado arriba a la derecha: icono `+` con texto `"Registrar Animal"`.
-  - [ ] 9.1.2 Conexión del botón `"Registrar Animal"` para abrir directamente el flujo de alta de animales (asistido con retorno reactivo al dashboard).
-- [ ] 9.2 Cuarteto de tarjetas resumen (KPI Cards responsivas):
-  - [ ] 9.2.1 **Tarjeta 1 - Fincas Activas:** Indicador numérico del total de unidades productivas activas registradas con icono temático.
-  - [ ] 9.2.2 **Tarjeta 2 - Animales en Inventario:** Total de bovinos vivos y activos en el hato, discriminando estado operativo.
-  - [ ] 9.2.3 **Tarjeta 3 - Eventos del Día:** Conteo de movimientos y eventos registrados en la fecha actual (pesajes, altas, traslados, salidas y servicios).
-  - [ ] 9.2.4 **Tarjeta 4 - Valor Estimado del Hato:** Cálculo monetario acumulado del valor de los animales registrados con formateo de moneda y separadores de miles.
-- [ ] 9.3 Arquitectura visual responsiva y Material Design 3:
-  - [ ] 9.3.1 Estructura en Grid/Wrap responsivo: 4 columnas en pantallas amplias de escritorio, 2 columnas en tablets y distribución adaptativa sin desbordamientos (*anti-overflow*) en móviles.
-  - [ ] 9.3.2 Tarjetas con elevación sutil, bordes suaves, paleta de colores coherente con `AppColors` y soporte para scroll vertical fluido.
-  - [ ] 9.3.3 Conexión reactiva con `InventarioController` para actualización en tiempo real de los 4 KPIs sin recargar la pantalla.
-- [ ] 9.4 Pruebas automatizadas y aseguramiento de calidad:
-  - [ ] 9.4.1 Tests de widget e integración para el nuevo Dashboard (`test/integration/dashboard_screen_test.dart`): verificar renderizado de las 4 tarjetas, formateo monetario, cálculo de eventos y navegación del botón `"Registrar Animal"`.
-  - [ ] 9.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
-  - [ ] 9.4.3 Verificación de suite completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+- [x] 9.1 Encabezado y acción principal de registro rápido:
+  - [x] 9.1.1 Encabezado estilizado en el Panel de Control con título descriptivo y botón destacado arriba a la derecha: icono `+` con texto `"Registrar Animal"`.
+  - [x] 9.1.2 Conexión del botón `"Registrar Animal"` para abrir directamente el flujo de alta de animales (asistido con retorno reactivo al dashboard).
+- [x] 9.2 Cuarteto de tarjetas resumen (KPI Cards responsivas):
+  - [x] 9.2.1 **Tarjeta 1 - Fincas Activas:** Indicador numérico del total de unidades productivas activas registradas con icono temático.
+  - [x] 9.2.2 **Tarjeta 2 - Animales en Inventario:** Total de bovinos vivos y activos en el hato, discriminando estado operativo.
+  - [x] 9.2.3 **Tarjeta 3 - Eventos del Día:** Conteo de movimientos y eventos registrados en la fecha actual (pesajes, altas, traslados, salidas y servicios).
+  - [x] 9.2.4 **Tarjeta 4 - Valor Estimado del Hato:** Cálculo monetario acumulado del valor de los animales registrados con formateo de moneda y separadores de miles.
+- [x] 9.3 Arquitectura visual responsiva y Material Design 3:
+  - [x] 9.3.1 Estructura en Grid/Wrap responsivo: 4 columnas en pantallas amplias de escritorio, 2 columnas en tablets y distribución adaptativa sin desbordamientos (*anti-overflow*) en móviles.
+  - [x] 9.3.2 Tarjetas con elevación sutil, bordes suaves, paleta de colores coherente con `AppColors` y soporte para scroll vertical fluido.
+  - [x] 9.3.3 Conexión reactiva con `InventarioController` para actualización en tiempo real de los 4 KPIs sin recargar la pantalla.
+- [x] 9.4 Pruebas automatizadas y aseguramiento de calidad:
+  - [x] 9.4.1 Tests de widget e integración para el nuevo Dashboard (`test/integration/dashboard_screen_test.dart`): verificar renderizado de las 4 tarjetas, formateo monetario, cálculo de eventos y navegación del botón `"Registrar Animal"`.
+  - [x] 9.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [x] 9.4.3 Verificación de suite completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+
+---
+
+## Fase 10: Gráfico Interactivo de Distribución Poblacional por Categoría y Sexo
+- [ ] 10.1 Motor de agregación poblacional y dependencias:
+  - [ ] 10.1.1 Configurar soporte gráfico (mediante `fl_chart` o componente gráfico interactivo nativo desacoplado en `pubspec.yaml`) garantizando compilación limpia en Web y Desktop.
+  - [ ] 10.1.2 Desarrollar helper/servicio de agregación poblacional que consulte `CategoriaRulesService` y agrupe los animales activos de `InventarioController` por sexo (*Hembras* y *Machos*) y categoría zootécnica (*Terneras, Novillas, Vacas* / *Terneros, Novillos, Toros* + categorías personalizadas).
+  - [ ] 10.1.3 Cálculo de conteos absolutos de cabezas y distribución porcentual para cada categoría y sexo.
+- [ ] 10.2 Componente visual del gráfico interactivo (`DistribucionPoblacionalChart`):
+  - [ ] 10.2.1 Construir el componente gráfico ubicado en `DashboardScreen` inmediatamente debajo de las 4 tarjetas de KPIs.
+  - [ ] 10.2.2 Gráfico de barras / columnas segmentadas con interactividad al tocar o posar el cursor (tooltips con nombre de categoría, sexo y conteo exacto de cabezas).
+  - [ ] 10.2.3 Paleta de colores zootécnicos sobrios y diferenciados por sexo (ej. tonalidades cálidas/rosáceas suaves para Hembras y frías/azuladas para Machos).
+- [ ] 10.3 Leyenda visual y panel de resumen poblacional:
+  - [ ] 10.3.1 Leyenda clara con chips/indicadores cromáticos que distingan categorías de machos y hembras.
+  - [ ] 10.3.2 Conteo absoluto visible de cabezas por grupo y total poblacional del hato.
+  - [ ] 10.3.3 Estado vacío (*Empty State*) estilizado cuando no haya animales registrados, invitando a usar el botón `"Registrar Animal"` o poblar datos demo.
+- [ ] 10.4 Reactividad en tiempo real y adaptación responsiva:
+  - [ ] 10.4.1 Conectar el gráfico al flujo reactivo de `InventarioController` para que altas, bajas, ediciones o reclasificaciones desde la pantalla de configuración actualicen las barras en tiempo real.
+  - [ ] 10.4.2 Diseño adaptativo sin desbordamientos (*anti-overflow*) con soporte de scroll vertical fluido en pantallas móviles, tablets y escritorio.
+- [ ] 10.5 Pruebas automatizadas y aseguramiento de calidad:
+  - [ ] 10.5.1 Tests de widget e integración para el gráfico (`test/integration/distribucion_poblacional_chart_test.dart`): verificar agregación matemática por categoría y sexo, renderizado de barras y leyenda.
+  - [ ] 10.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [ ] 10.5.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+
 
 
 
