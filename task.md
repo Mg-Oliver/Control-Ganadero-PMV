@@ -206,6 +206,30 @@
   - [ ] 10.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
   - [ ] 10.5.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
 
+---
+
+## Fase 11: Alternancia de Vistas (Tarjetas / Tabla) y Personalización Dinámica de Columnas en Inventario
+- [ ] 11.1 Barra de herramientas superior con alternancia de visualización (View Mode Switcher):
+  - [ ] 11.1.1 Barra de control en la cabecera del área central de `InventarioScreen` con `SegmentedButton` interactivo para alternar entre:
+    - *Vista por Tarjetas:* Grid compacto (`EntityCardGrid`) con avatares, badges de raza/categoría y semáforos de estado.
+    - *Vista por Tabla Completa:* Tabla estructurada (`EntityDataTable`) con scroll bidireccional y ordenamiento por encabezados.
+  - [ ] 11.1.2 Transición visual fluida entre ambas vistas preservando filtros aplicados y resultados coincidentes.
+  - [ ] 11.1.3 Persistencia de la vista seleccionada en `SharedPreferences` para recordar la preferencia del usuario en sesiones posteriores.
+- [ ] 11.2 Selector dinámico y modal de "Personalizar Columnas":
+  - [ ] 11.2.1 Botón de acción `"Personalizar Columnas"` visible en la barra de herramientas cuando la vista por tabla está activa.
+  - [ ] 11.2.2 Menú emergente / diálogo modal con chips o checkboxes interactivos para las 10 columnas del hato:
+    - *Arete de manejo*, *Nombre / Alias*, *Sexo*, *Categoría*, *Raza / Composición*, *Peso actual*, *Manga*, *Potrero*, *Finca*, *Estado*.
+  - [ ] 11.2.3 Reglas de selección: permitir marcar/desmarcar libremente con protección de columna clave (*Arete de manejo* fijo como ancla mínima).
+  - [ ] 11.2.4 Botones rápidos para `"Seleccionar todas"` y `"Restablecer columnas por defecto"`.
+- [ ] 11.3 Renderizado dinámico y persistencia local de columnas:
+  - [ ] 11.3.1 Adaptar `EntityDataTable` para renderizar únicamente las `DataColumn` y `DataCell` correspondientes a las columnas activas.
+  - [ ] 11.3.2 Persistir la lista de columnas visibles en `SharedPreferences` y recargarla automáticamente al iniciar `InventarioScreen`.
+- [ ] 11.4 Pruebas automatizadas y aseguramiento de calidad:
+  - [ ] 11.4.1 Tests de widget e integración (`test/integration/inventario_view_mode_columns_test.dart`): verificar conmutación entre vista tarjetas y tabla, apertura del selector de columnas, filtrado visual de columnas y persistencia de preferencias.
+  - [ ] 11.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [ ] 11.4.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+
+
 
 
 
