@@ -70,23 +70,51 @@
 ---
 
 ## Fase 5: Transformación del Shell de Navegación a Menú Lateral (Drawer)
-- [ ] 5.1 Rediseño del `AppBar` superior: eliminación definitiva del `TabBar` fijo, adición de icono de menú hamburguesa a la izquierda para despliegue del drawer, título dinámico según sección activa y acciones contextuales (botón de datos semilla demo).
-- [ ] 5.2 Estructura y diseño del `AppDrawer` / `NavigationDrawer` lateral:
-  - [ ] 5.2.1 Header visual estilizado del drawer (logo/icono agropecuario, título "Control Ganadero Bovino" y versión/subtítulo).
-  - [ ] 5.2.2 Opción 1: "Panel de control" (pantalla de inicio por defecto con métricas/KPIs o vista principal de resumen).
-  - [ ] 5.2.3 Opción 2: "Inventario" (pantalla de catálogo con sidebar de filtros dinámicos, tarjetas y tabla exhaustiva).
-  - [ ] 5.2.4 Opción 3: "Ciclo reproductivo" (vista placeholder informativa / en construcción para el módulo de reproducción).
-  - [ ] 5.2.5 Separador visual (`Divider`) y opción al fondo: "Configuración" (pantalla placeholder de ajustes de sistema / conexión Supabase).
-- [ ] 5.3 Gestión de navegación y preservación de estado:
-  - [ ] 5.3.1 Implementar controlador o estado local en `MainWorkspaceShell` que gobierne el índice de la sección activa.
-  - [ ] 5.3.2 Uso de `IndexedStack` (o enrutamiento equivalente) para conmutar entre las vistas principales sin destruir ni recrear el estado de las pantallas al alternar en el menú.
-  - [ ] 5.3.3 Cierre automático asistido del Drawer al seleccionar cualquier opción de navegación.
-- [ ] 5.4 Creación de vistas asociadas:
-  - [ ] 5.4.1 Pantalla inicial "Panel de Control" (`DashboardScreen` con KPIs de resumen y accesos rápidos).
-  - [ ] 5.4.2 Pantalla "Configuración" (`ConfiguracionScreen` con estado de conexión a Supabase y opciones generales).
-- [ ] 5.5 Integración, resiliencia y verificación de calidad:
-  - [ ] 5.5.1 Actualización de pruebas existentes en `test/widget_test.dart` y tests de integración para validar la navegación mediante el Drawer y los nuevos títulos.
-  - [ ] 5.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
-  - [ ] 5.5.3 Verificación de suite de pruebas con `flutter test` (100% aprobadas).
+- [x] 5.1 Rediseño del `AppBar` superior: eliminación definitiva del `TabBar` fijo, adición de icono de menú hamburguesa a la izquierda para despliegue del drawer, título dinámico según sección activa y acciones contextuales (botón de datos semilla demo).
+- [x] 5.2 Estructura y diseño del `AppDrawer` / `NavigationDrawer` lateral:
+  - [x] 5.2.1 Header visual estilizado del drawer (logo/icono agropecuario, título "Control Ganadero Bovino" y versión/subtítulo).
+  - [x] 5.2.2 Opción 1: "Panel de control" (pantalla de inicio por defecto con métricas/KPIs o vista principal de resumen).
+  - [x] 5.2.3 Opción 2: "Inventario" (pantalla de catálogo con sidebar de filtros dinámicos, tarjetas y tabla exhaustiva).
+  - [x] 5.2.4 Opción 3: "Ciclo reproductivo" (vista placeholder informativa / en construcción para el módulo de reproducción).
+  - [x] 5.2.5 Separador visual (`Divider`) y opción al fondo: "Configuración" (pantalla placeholder de ajustes de sistema / conexión Supabase).
+- [x] 5.3 Gestión de navegación y preservación de estado:
+  - [x] 5.3.1 Implementar controlador o estado local en `MainWorkspaceShell` que gobierne el índice de la sección activa.
+  - [x] 5.3.2 Uso de `IndexedStack` (o enrutamiento equivalente) para conmutar entre las vistas principales sin destruir ni recrear el estado de las pantallas al alternar en el menú.
+  - [x] 5.3.3 Cierre automático asistido del Drawer al seleccionar cualquier opción de navegación.
+- [x] 5.4 Creación de vistas asociadas:
+  - [x] 5.4.1 Pantalla inicial "Panel de Control" (`DashboardScreen` con KPIs de resumen y accesos rápidos).
+  - [x] 5.4.2 Pantalla "Configuración" (`ConfiguracionScreen` con estado de conexión a Supabase y opciones generales).
+- [x] 5.5 Integración, resiliencia y verificación de calidad:
+  - [x] 5.5.1 Actualización de pruebas existentes en `test/widget_test.dart` y tests de integración para validar la navegación mediante el Drawer y los nuevos títulos.
+  - [x] 5.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [x] 5.5.3 Verificación de suite de pruebas con `flutter test` (100% aprobadas).
+
+### Notas técnicas de Fase 5
+- **Shell de navegación drawer-based**: `MainWorkspaceShell` reemplaza el `TabController`/`TabBar` por un `_selectedIndex` (0-4) gestionado con `setState`. El `Scaffold.drawer` recibe `AppDrawer`, que cierra automáticamente el drawer vía `Navigator.of(context).pop()` antes de llamar al callback de navegación.
+- **Preservación de estado con IndexedStack**: 5 pantallas en `IndexedStack` (Panel de Control, Expediente, Inventario, Ciclo Reproductivo, Configuración) se mantienen vivas al cambiar de sección; el estado del `InventarioController` y los formularios no se pierden.
+- **Título dinámico en AppBar**: el título cambia reactivamente según `_selectedIndex` usando la constante `_sectionTitles`. El botón de datos semilla solo aparece en el Panel de Control (index 0).
+- **DashboardScreen reactiva**: usa `ListenableBuilder` sobre `InventarioController` para mostrar KPIs en tiempo real (fincas, lotes, animales activos). Los accesos rápidos navegan a `Expediente` vía callback y el widget de seed data replica la funcionalidad del AppBar anterior.
+- **ConfiguracionScreen**: muestra el estado de conexión a Supabase (verificación asíncrona con `SupabaseConfig.client`), información de versión y opciones generales placeholders.
+- **Layout robusto anti-overflow**: `_KpiTile` envuelve la columna de texto en `Flexible`; `_QuickAction` usa `mainAxisSize: MainAxisSize.min` y `Flexible` en el texto. `AppDrawer` usa `Drawer` + `ListView` + tiles personalizados con `Flexible` para evitar desbordamientos en viewports pequeños.
+
+---
+
+## Fase 6: Rebranding Zootécnico ("Lote" a "Manga") y Reorganización de Acciones de Registro
+- [ ] 6.1 Mapeo de terminología visible ("Lote" -> "Manga") en la interfaz de usuario:
+  - [ ] 6.1.1 Reemplazar "Lote" / "Lotes" por "Manga" / "Mangas" en títulos, encabezados, tooltips, etiquetas de formulario y placeholders (`LoteForm`, `AnimalForm`, `FincaForm`).
+  - [ ] 6.1.2 Reemplazar en la tabla de datos (`EntityDataTable`), tarjetas de resumen (`LoteCard`, `AnimalCard`), selector de secciones del sidebar (`InventarioSidebar`) y expedientes del drawer (`LoteExpedienteView`, `AnimalExpedienteView`).
+  - [ ] 6.1.3 Preservar estrictamente los identificadores internos y campos de base de datos (`lote_id`, `LoteModel`, `lotes_service.dart`, endpoints de Supabase) para mantener integridad y compatibilidad referencial.
+- [ ] 6.2 Reubicación de accesos directos de registro de "Finca" y "Manga":
+  - [ ] 6.2.1 Retirar los accesos directos de creación de Finca y Manga de la pantalla principal (`DashboardScreen`) y barras globales, manteniendo en el inicio el foco en KPIs y alta directa de animales.
+  - [ ] 6.2.2 Reubicar las acciones de registro `[+ Nueva Finca]` y `[+ Nueva Manga]` dentro de la pantalla de `Inventario` (como acciones secundarias o botones de cabecera contextuales del módulo de inventario).
+  - [ ] 6.2.3 Asegurar que al pulsar `[+ Nueva Finca]` o `[+ Nueva Manga]` desde Inventario, se abra el formulario correspondiente y al guardar refresque el catálogo optimista.
+- [ ] 6.3 Consistencia de filtros y selectores con el término "Manga":
+  - [ ] 6.3.1 Validar que el selector de sección en el sidebar muestre `[Fincas]`, `[Mangas]`, `[Animales]`.
+  - [ ] 6.3.2 Validar que en el formulario y filtros de Animales el dropdown indique `"Filtrar por Manga"` o `"Seleccionar Manga"`.
+- [ ] 6.4 Verificación integral de calidad:
+  - [ ] 6.4.1 Actualizar textos en la suite de pruebas (`test/widget_test.dart` y tests de integración) para que coincidan con la nueva terminología "Manga".
+  - [ ] 6.4.2 Ejecutar `flutter analyze` y asegurar **0 errores y 0 advertencias**.
+  - [ ] 6.4.3 Ejecutar `flutter test` y asegurar que el 100% de las pruebas pasen satisfactoriamente.
+
 
 
