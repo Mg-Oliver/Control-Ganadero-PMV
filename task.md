@@ -67,3 +67,26 @@
 - **Seed Data integral**: `SeedService` y `supabase/seed.sql` proveen 3 fincas zootécnicas, 6 lotes especializados y 28 animales representativos (razas puras, cruces Modo A, reproductores élite y casos de baja), activables con un clic desde el AppBar de desarrollo.
 - **Unificación de estructura**: El proyecto Flutter ahora reside directamente en la raíz del espacio de trabajo, permitiendo ejecutar `flutter run -d chrome` de forma directa e inmediata.
 
+---
+
+## Fase 5: Transformación del Shell de Navegación a Menú Lateral (Drawer)
+- [ ] 5.1 Rediseño del `AppBar` superior: eliminación definitiva del `TabBar` fijo, adición de icono de menú hamburguesa a la izquierda para despliegue del drawer, título dinámico según sección activa y acciones contextuales (botón de datos semilla demo).
+- [ ] 5.2 Estructura y diseño del `AppDrawer` / `NavigationDrawer` lateral:
+  - [ ] 5.2.1 Header visual estilizado del drawer (logo/icono agropecuario, título "Control Ganadero Bovino" y versión/subtítulo).
+  - [ ] 5.2.2 Opción 1: "Panel de control" (pantalla de inicio por defecto con métricas/KPIs o vista principal de resumen).
+  - [ ] 5.2.3 Opción 2: "Inventario" (pantalla de catálogo con sidebar de filtros dinámicos, tarjetas y tabla exhaustiva).
+  - [ ] 5.2.4 Opción 3: "Ciclo reproductivo" (vista placeholder informativa / en construcción para el módulo de reproducción).
+  - [ ] 5.2.5 Separador visual (`Divider`) y opción al fondo: "Configuración" (pantalla placeholder de ajustes de sistema / conexión Supabase).
+- [ ] 5.3 Gestión de navegación y preservación de estado:
+  - [ ] 5.3.1 Implementar controlador o estado local en `MainWorkspaceShell` que gobierne el índice de la sección activa.
+  - [ ] 5.3.2 Uso de `IndexedStack` (o enrutamiento equivalente) para conmutar entre las vistas principales sin destruir ni recrear el estado de las pantallas al alternar en el menú.
+  - [ ] 5.3.3 Cierre automático asistido del Drawer al seleccionar cualquier opción de navegación.
+- [ ] 5.4 Creación de vistas asociadas:
+  - [ ] 5.4.1 Pantalla inicial "Panel de Control" (`DashboardScreen` con KPIs de resumen y accesos rápidos).
+  - [ ] 5.4.2 Pantalla "Configuración" (`ConfiguracionScreen` con estado de conexión a Supabase y opciones generales).
+- [ ] 5.5 Integración, resiliencia y verificación de calidad:
+  - [ ] 5.5.1 Actualización de pruebas existentes en `test/widget_test.dart` y tests de integración para validar la navegación mediante el Drawer y los nuevos títulos.
+  - [ ] 5.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [ ] 5.5.3 Verificación de suite de pruebas con `flutter test` (100% aprobadas).
+
+
