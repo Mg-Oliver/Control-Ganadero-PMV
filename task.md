@@ -276,6 +276,32 @@
   - [ ] 13.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
   - [ ] 13.4.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
 
+---
+
+## Fase 14: Registro Rápido Contextual de Progenitores (Padre y Madre) en el Formulario de Animal
+- [ ] 14.1 Acciones contextuales de alta rápida en los selectores de linaje:
+  - [ ] 14.1.1 Agregar botón de acción visible `[+ Registrar nuevo padre]` adyacente o integrado en el selector de Padre de `AnimalForm`.
+  - [ ] 14.1.2 Agregar botón de acción visible `[+ Registrar nueva madre]` adyacente o integrado en el selector de Madre de `AnimalForm`.
+- [ ] 14.2 Diálogo / Modal de sub-formulario asistido sin pérdida de contexto:
+  - [ ] 14.2.1 Construir el componente modal (`RegistrarProgenitorModal` en BottomSheet o Diálogo) que preserve intacto todo el estado del formulario principal en segundo plano.
+  - [ ] 14.2.2 Campos esenciales y optimizados del progenitor:
+    - *Sexo* preseleccionado y bloqueado según el rol (`Macho` para padre, `Hembra` para madre).
+    - *Arete de manejo* (obligatorio).
+    - *Nombre / Alias* (opcional, aplicando regla de fallback automático si queda vacío).
+    - *Finca* (hereda por defecto la finca seleccionada en el animal principal).
+    - *Raza / Composición básica* (selector de raza pura o cruce).
+    - *Fecha de nacimiento / Edad aproximada*.
+- [ ] 14.3 Guardado, sincronización y selección automática inmediata:
+  - [ ] 14.3.1 Guardar el progenitor en Supabase (`AnimalesService.crearAnimal`) e incorporarlo inmediatamente al `InventarioController`.
+  - [ ] 14.3.2 Cerrar automáticamente el modal tras el guardado exitoso y refrescar la lista de candidatos genealógicos.
+  - [ ] 14.3.3 Asignar y preseleccionar de forma automática el animal recién creado en el desplegable de Padre o Madre correspondiente.
+  - [ ] 14.3.4 Mostrar SnackBar de confirmación mediante `AppFeedback.mostrarExito` ("Progenitor registrado y asignado").
+- [ ] 14.4 Pruebas automatizadas y aseguramiento de calidad:
+  - [ ] 14.4.1 Tests de widget e integración (`test/integration/registro_progenitor_rapido_test.dart`): verificar renderizado de botones contextuales, apertura del modal, preservación de datos del formulario principal, guardado del progenitor y auto-selección en el campo de linaje.
+  - [ ] 14.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [ ] 14.4.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+
+
 
 
 
