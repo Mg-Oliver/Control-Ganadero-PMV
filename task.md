@@ -279,27 +279,53 @@
 ---
 
 ## Fase 14: Registro Rápido Contextual de Progenitores (Padre y Madre) en el Formulario de Animal
-- [ ] 14.1 Acciones contextuales de alta rápida en los selectores de linaje:
-  - [ ] 14.1.1 Agregar botón de acción visible `[+ Registrar nuevo padre]` adyacente o integrado en el selector de Padre de `AnimalForm`.
-  - [ ] 14.1.2 Agregar botón de acción visible `[+ Registrar nueva madre]` adyacente o integrado en el selector de Madre de `AnimalForm`.
-- [ ] 14.2 Diálogo / Modal de sub-formulario asistido sin pérdida de contexto:
-  - [ ] 14.2.1 Construir el componente modal (`RegistrarProgenitorModal` en BottomSheet o Diálogo) que preserve intacto todo el estado del formulario principal en segundo plano.
-  - [ ] 14.2.2 Campos esenciales y optimizados del progenitor:
+- [x] 14.1 Acciones contextuales de alta rápida en los selectores de linaje:
+  - [x] 14.1.1 Agregar botón de acción visible `[+ Registrar nuevo padre]` adyacente o integrado en el selector de Padre de `AnimalForm`.
+  - [x] 14.1.2 Agregar botón de acción visible `[+ Registrar nueva madre]` adyacente o integrado en el selector de Madre de `AnimalForm`.
+- [x] 14.2 Diálogo / Modal de sub-formulario asistido sin pérdida de contexto:
+  - [x] 14.2.1 Construir el componente modal (`RegistrarProgenitorModal` en BottomSheet o Diálogo) que preserve intacto todo el estado del formulario principal en segundo plano.
+  - [x] 14.2.2 Campos esenciales y optimizados del progenitor:
     - *Sexo* preseleccionado y bloqueado según el rol (`Macho` para padre, `Hembra` para madre).
     - *Arete de manejo* (obligatorio).
     - *Nombre / Alias* (opcional, aplicando regla de fallback automático si queda vacío).
     - *Finca* (hereda por defecto la finca seleccionada en el animal principal).
     - *Raza / Composición básica* (selector de raza pura o cruce).
     - *Fecha de nacimiento / Edad aproximada*.
-- [ ] 14.3 Guardado, sincronización y selección automática inmediata:
-  - [ ] 14.3.1 Guardar el progenitor en Supabase (`AnimalesService.crearAnimal`) e incorporarlo inmediatamente al `InventarioController`.
-  - [ ] 14.3.2 Cerrar automáticamente el modal tras el guardado exitoso y refrescar la lista de candidatos genealógicos.
-  - [ ] 14.3.3 Asignar y preseleccionar de forma automática el animal recién creado en el desplegable de Padre o Madre correspondiente.
-  - [ ] 14.3.4 Mostrar SnackBar de confirmación mediante `AppFeedback.mostrarExito` ("Progenitor registrado y asignado").
-- [ ] 14.4 Pruebas automatizadas y aseguramiento de calidad:
-  - [ ] 14.4.1 Tests de widget e integración (`test/integration/registro_progenitor_rapido_test.dart`): verificar renderizado de botones contextuales, apertura del modal, preservación de datos del formulario principal, guardado del progenitor y auto-selección en el campo de linaje.
-  - [ ] 14.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
-  - [ ] 14.4.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+- [x] 14.3 Guardado, sincronización y selección automática inmediata:
+  - [x] 14.3.1 Guardar el progenitor en Supabase (`AnimalesService.crearAnimal`) e incorporarlo inmediatamente al `InventarioController`.
+  - [x] 14.3.2 Cerrar automáticamente el modal tras el guardado exitoso y refrescar la lista de candidatos genealógicos.
+  - [x] 14.3.3 Asignar y preseleccionar de forma automática el animal recién creado en el desplegable de Padre o Madre correspondiente.
+  - [x] 14.3.4 Mostrar SnackBar de confirmación mediante `AppFeedback.mostrarExito` ("Progenitor registrado y asignado").
+- [x] 14.4 Pruebas automatizadas y aseguramiento de calidad:
+  - [x] 14.4.1 Tests de widget e integración (`test/integration/registro_progenitor_rapido_test.dart`): verificar renderizado de botones contextuales, apertura del modal, preservación de datos del formulario principal, guardado del progenitor y auto-selección en el campo de linaje.
+  - [x] 14.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [x] 14.4.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+
+---
+
+## Fase 15: Gestión Especializada de Semen y Toros Donantes para Inseminación Artificial (IA)
+- [ ] 15.1 Esquema de base de datos y modelo de dominio de toros donantes:
+  - [ ] 15.1.1 Script SQL de migración (`supabase/migrations/002_toros_donantes.sql`): tabla `toros_donantes` con campos `id (UUID)`, `nombre (TEXT)`, `codigo_pajuela (TEXT)`, `raza (TEXT)`, `genealogia (JSONB: padres y abuelos paternos/maternos con raza, código y nombre)`, `activo (BOOLEAN DEFAULT TRUE)`, timestamps y políticas de seguridad RLS.
+  - [ ] 15.1.2 Modelo Dart `ToroDonanteModel` y modelo `GenealogiaDonanteModel` con serialización y deserialización JSON completa.
+  - [ ] 15.1.3 Servicio `TorosDonantesService` para operaciones CRUD y listado de toros activos en Supabase con soporte offline/memoria.
+- [ ] 15.2 Lógica condicional en el formulario de Registro de Animal (`AnimalForm`):
+  - [ ] 15.2.1 Conmutador / selector de concepción: al marcar "Inseminación Artificial" (IA), ocultar automáticamente el selector de toros vivos del hato y mostrar exclusivamente el selector especializado de "Toros Donantes / Pajuelas".
+  - [ ] 15.2.2 Garantizar que los toros donantes permanezcan aislados y NO aparezcan en el inventario general de animales vivos de la finca.
+- [ ] 15.3 Sub-formulario modal de alta rápida de toro donante:
+  - [ ] 15.3.1 Botón de acción contextual `[+ Registrar nuevo toro donante]` integrado en el selector de pajuelas.
+  - [ ] 15.3.2 Modal interactivo (`RegistrarToroDonanteModal`) para capturar:
+    - *Nombre comercial del toro* (ej. *ABS Global Manso 420*).
+    - *Código de pajuela* (código de termo o registro genealógico oficial).
+    - *Raza del donante* (catálogo de razas).
+    - *Genealogía multinivel* en acordeón/sección: Padre, Madre, Abuelo paterno, Abuela paterna, Abuelo materno y Abuela materna (con nombre, código y raza de cada uno).
+  - [ ] 15.3.3 Guardado en `toros_donantes`, cierre del modal y autoasignación inmediata del nuevo donante en el linaje del animal en edición.
+- [ ] 15.4 Integración en el expediente y drawer de linaje:
+  - [ ] 15.4.1 En `AnimalExpedienteView`, si el animal proviene de IA, desplegar badge distintivo *"Inseminación Artificial (IA)"*, código de pajuela y árbol genealógico enriquecido con los ancestros del donante.
+- [ ] 15.5 Pruebas automatizadas y aseguramiento de calidad:
+  - [ ] 15.5.1 Tests de widget e integración (`test/integration/toros_donantes_ia_test.dart`): verificar alternancia condicional de selectores en IA, exclusión de donantes en el inventario vivo, captura de genealogía multinivel y autoasignación al animal.
+  - [ ] 15.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [ ] 15.5.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+
 
 
 
