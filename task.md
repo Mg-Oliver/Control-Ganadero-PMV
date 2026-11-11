@@ -229,6 +229,36 @@
   - [ ] 11.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
   - [ ] 11.4.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
 
+---
+
+## Fase 12: Edición Rápida de Animales en la Vista por Tabla e Integración Reactiva
+- [ ] 12.1 Columna y acción de edición por fila en `EntityDataTable`:
+  - [ ] 12.1.1 Agregar columna de acciones (`Acciones`) con botón de edición rápida (icono `Icons.edit_outlined` con tooltip `"Editar animal"`) en cada fila de animales.
+  - [ ] 12.1.2 Diálogo o modal de edición rápida (`EditarAnimalDialog`) precargado con los valores actuales del individuo seleccionado.
+  - [ ] 12.1.3 Formulario de edición con campos clave:
+    - *Arete de manejo* (texto obligatorio no vacío).
+    - *Nombre / Alias* (texto opcional).
+    - *Peso actual* (numérico decimal con validación >= 0).
+    - *Manga* (`lote_id`) mediante selector filtrado exclusivamente por la finca del animal.
+    - *Potrero actual* (campo de texto descriptivo).
+    - *Tipo de explotación* (desplegable: *Ceba*, *Cría*, *Lechería*, *Doble Propósito*).
+    - *Estado* (desplegable: *Activo*, *Vendido*, *Muerto*, *Descartado*, *Robado*).
+- [ ] 12.2 Validación de reglas de negocio zootécnicas:
+  - [ ] 12.2.1 Integrar `PredioConsistencyHelper`: si el estado cambia a *Vendido*, *Muerto*, *Robado* o *Descartado*, exigir fecha de salida (por defecto fecha actual) y liberar automáticamente la asignación de manga y potrero.
+  - [ ] 12.2.2 Validar consistencia de manga: impedir la asignación de mangas que no pertenezcan a la finca donde reside el animal.
+- [ ] 12.3 Persistencia en base de datos y actualización optimista:
+  - [ ] 12.3.1 Implementar método `actualizarAnimal` en `AnimalesService` para enviar el `UPDATE` a la tabla `animales` en Supabase.
+  - [ ] 12.3.2 Implementar método `actualizarAnimalOptimista` en `InventarioController` para reflejar los cambios en tiempo real en la tabla, tarjetas, KPIs del dashboard y expediente lateral sin recargar la pantalla.
+  - [ ] 12.3.3 Manejo de excepciones y reversión en caso de fallos de red.
+- [ ] 12.4 Feedback al usuario desacoplado:
+  - [ ] 12.4.1 Despliegue de SnackBar de éxito mediante `AppFeedback.mostrarExito` al guardar correctamente los cambios.
+  - [ ] 12.4.2 Despliegue de SnackBar de error mediante `AppFeedback.mostrarError` con mensaje claro si ocurre algún fallo de red o validación.
+- [ ] 12.5 Pruebas automatizadas y aseguramiento de calidad:
+  - [ ] 12.5.1 Tests de widget e integración (`test/integration/editar_animal_tabla_test.dart`): verificar apertura del modal de edición desde la tabla, modificación de peso y estado, aplicación de reglas de negocio, llamada al controlador y visualización de SnackBar.
+  - [ ] 12.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [ ] 12.5.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+
+
 
 
 
