@@ -119,24 +119,50 @@
 ---
 
 ## Fase 7: Motor de Reglas Zootécnicas y Configuración Dinámica de Categorización
-- [ ] 7.1 Modelos de dominio y configuración de categorías (`CategoriaRuleModel` / `CategoriaConfigModel`):
-  - [ ] 7.1.1 Definición de reglas parametrizadas: umbrales de edad en meses (mínimo y máximo), sexo (`Macho` / `Hembra`), tipo de explotación (`Cría`, `Ceba`, `Lechería`, `Doble Propósito`), condición de parto (`requiereParto: true/false`) y etiqueta de categoría resultante.
-  - [ ] 7.1.2 Implementación de la matriz de reglas por defecto:
-    - **Hembras:** 0 a 4 meses -> *"Ternera"*; 5 a 10 meses -> *"Novilla"*; evento de parto registrado (independiente de la edad) -> *"Vaca"*.
-    - **Machos:** 0 a 4 meses -> *"Ternero"*; 5 a 10 meses -> *"Novillo"*; a partir de 24 meses (2 años) -> *"Toro"*.
-  - [ ] 7.1.3 Soporte de serialización y deserialización JSON para persistencia de configuraciones personalizadas.
-- [ ] 7.2 Servicio y motor de evaluación de reglas (`CategoriaRulesService`):
-  - [ ] 7.2.1 Método evaluador dinámico `determinarCategoria({required DateTime fechaNacimiento, required SexoAnimal sexo, int numeroPartos = 0, TipoExplotacion? tipoExplotacion})`.
-  - [ ] 7.2.2 Mecanismo de persistencia local (vía `SharedPreferences` o tabla de configuración en Supabase) con recuperación y fallback automático a los valores predeterminados citados.
-  - [ ] 7.2.3 Métodos para agregar, editar o personalizar umbrales y categorías por tipo de explotación específica.
-- [ ] 7.3 Integración en la capa de datos y visualización:
-  - [ ] 7.3.1 Incorporar getter o helper de categoría zootécnica dinámica en `AnimalModel` y expediente del animal.
-  - [ ] 7.3.2 Renderizado del badge de categoría zootécnica en `AnimalCard`, `EntityDataTable` y `AnimalExpedienteView`.
-- [ ] 7.4 Pruebas unitarias automatizadas (`test/unit/categoria_rules_test.dart`):
-  - [ ] 7.4.1 Test de categorización en machos: verificar cálculo exacto en rangos de 0-4 meses (Ternero), 5-10 meses (Novillo), etapas intermedias y >=24 meses (Toro).
-  - [ ] 7.4.2 Test de categorización en hembras: verificar rangos de 0-4 meses (Ternera), 5-10 meses (Novilla), y transición forzada a "Vaca" inmediata al registrar 1 o más partos sin importar la edad.
-  - [ ] 7.4.3 Test de persistencia y personalización: verificar modificación de umbrales por tipo de explotación y correcto funcionamiento del fallback ante fallos o datos vacíos.
-  - [ ] 7.4.4 Verificación con `flutter analyze` (0 errores, 0 advertencias) y `flutter test` (100% aprobadas).
+- [x] 7.1 Modelos de dominio y configuración de categorías (`CategoriaRuleModel` / `CategoriaConfigModel`):
+  - [x] 7.1.1 Definición de reglas parametrizadas: umbrales de edad en meses (mínimo y máximo), sexo (`Macho` / `Hembra`), tipo de explotación (`Cría`, `Ceba`, `Lechería`, `Doble Propósito`), condición de parto (`requiereParto: true/false`) y etiqueta de categoría resultante.
+  - [x] 7.1.2 Implementación de la matriz de reglas por defecto:
+    - **Hembras:** 0 a 4 meses -> *"Ternera"*; 5+ meses sin partos -> *"Novilla"*; evento de parto registrado (independiente de la edad) -> *"Vaca"*.
+    - **Machos:** 0 a 4 meses -> *"Ternero"*; 5 a 23 meses -> *"Novillo"*; a partir de 24 meses (2 años) -> *"Toro"*.
+  - [x] 7.1.3 Soporte de serialización y deserialización JSON para persistencia de configuraciones personalizadas.
+- [x] 7.2 Servicio y motor de evaluación de reglas (`CategoriaRulesService`):
+  - [x] 7.2.1 Método evaluador dinámico `determinarCategoria({required DateTime fechaNacimiento, required String sexo, int numeroPartos = 0, String? tipoExplotacion})`.
+  - [x] 7.2.2 Mecanismo de persistencia local vía `SharedPreferences` con recuperación y fallback automático a los valores predeterminados.
+  - [x] 7.2.3 Métodos `personalizarReglas`, `restaurarDefectos` para editar umbrales y categorías por tipo de explotación específica.
+- [x] 7.3 Integración en la capa de datos y visualización:
+  - [x] 7.3.1 Getter `categoriaZootecnica` en `AnimalModel` que invoca `CategoriaRulesService.evaluar`; campo `numeroPartos` añadido al modelo.
+  - [x] 7.3.2 Badge `_CategoriaBadge` en `AnimalCard`, columna `'Categoría'` en `EntityDataTable` y fila en `AnimalExpedienteView`.
+- [x] 7.4 Pruebas unitarias automatizadas (`test/unit/categoria_rules_test.dart`):
+  - [x] 7.4.1 Test de categorización en machos: rangos 0-4 meses (Ternero), 5-23 meses (Novillo), >=24 meses (Toro) — 9 casos.
+  - [x] 7.4.2 Test de categorización en hembras: rangos 0-4 meses (Ternera), 5+ sin partos (Novilla), transición forzada a "Vaca" al registrar 1+ partos — 9 casos.
+  - [x] 7.4.3 Test de persistencia y personalización: 6 casos (reglas custom, restaurarDefectos, fallback JSON inválido, preferencias vacías, serialización, tipo explotación específico).
+  - [x] 7.4.4 Verificación con `flutter analyze` (0 errores, 0 advertencias) y `flutter test` (42/42 aprobadas).
+
+---
+
+## Fase 8: Pantalla de Configuración Interactiva de Categorías Zootécnicas
+- [ ] 8.1 UI de visualización y navegación por tipo de explotación:
+  - [ ] 8.1.1 Selector segmentado / pestañas para alternar entre tipos de explotación: *Cría*, *Ceba*, *Lechería* y *Doble Propósito*.
+  - [ ] 8.1.2 Listado interactivo de tarjetas de reglas de categorías divididas por sexo (*Machos* y *Hembras*).
+  - [ ] 8.1.3 Visualización clara de parámetros: nombre de la categoría, rango de edad (meses mínimo y máximo) y chip de condición especial (ej. *Requiere parto*).
+  - [ ] 8.1.4 Botón para restaurar los valores de fábrica predeterminados del sistema con confirmación dialogada.
+- [ ] 8.2 Modales y formularios de edición / creación de categorías:
+  - [ ] 8.2.1 Modal de edición rápida para modificar rangos de edad (meses mín - máx) de categorías existentes.
+  - [ ] 8.2.2 Modal para agregar nueva categoría personalizada: Nombre, Sexo aplicable, Rango de edad (meses) y switch de disparador de evento (ej. parto).
+  - [ ] 8.2.3 Acción para eliminar categorías personalizadas creadas por el usuario.
+- [ ] 8.3 Validador de consistencia zootécnica y prevención de traslapes:
+  - [ ] 8.3.1 Algoritmo de validación que impida traslapes incoherentes de edad dentro del mismo sexo y tipo de explotación (ningún mes puede pertenecer a dos categorías simultáneas sin condición excluyente).
+  - [ ] 8.3.2 Validación de coherencia de rangos: edad mínima estrictamente menor que edad máxima y valores no negativos.
+  - [ ] 8.3.3 Feedback visual de error con mensajes descriptivos en caso de conflicto de rangos o nombres vacíos.
+- [ ] 8.4 Conexión reactiva con el estado global de la aplicación:
+  - [ ] 8.4.1 Persistencia inmediata de los cambios mediante `CategoriaRulesService.personalizarReglas` / `guardarConfiguracion`.
+  - [ ] 8.4.2 Notificación al `InventarioController` para disparar la reclasificación inmediata de todos los animales en memoria sin recargar la pantalla.
+  - [ ] 8.4.3 Actualización en tiempo real de badges en `InventarioScreen`, métricas del `DashboardScreen` y expediente lateral `AnimalExpedienteView`.
+- [ ] 8.5 Pruebas automatizadas y aseguramiento de calidad:
+  - [ ] 8.5.1 Tests de widget e integración para la pantalla de configuración (`test/integration/configuracion_categorias_test.dart`): verificar edición de rangos, rechazo de traslapes y restauración de fábrica.
+  - [ ] 8.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [ ] 8.5.3 Verificación completa con `flutter test` asegurando 100% de pruebas pasadas.
+
 
 
 
