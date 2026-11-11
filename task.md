@@ -141,27 +141,48 @@
 ---
 
 ## Fase 8: Pantalla de Configuración Interactiva de Categorías Zootécnicas
-- [ ] 8.1 UI de visualización y navegación por tipo de explotación:
-  - [ ] 8.1.1 Selector segmentado / pestañas para alternar entre tipos de explotación: *Cría*, *Ceba*, *Lechería* y *Doble Propósito*.
-  - [ ] 8.1.2 Listado interactivo de tarjetas de reglas de categorías divididas por sexo (*Machos* y *Hembras*).
-  - [ ] 8.1.3 Visualización clara de parámetros: nombre de la categoría, rango de edad (meses mínimo y máximo) y chip de condición especial (ej. *Requiere parto*).
-  - [ ] 8.1.4 Botón para restaurar los valores de fábrica predeterminados del sistema con confirmación dialogada.
-- [ ] 8.2 Modales y formularios de edición / creación de categorías:
-  - [ ] 8.2.1 Modal de edición rápida para modificar rangos de edad (meses mín - máx) de categorías existentes.
-  - [ ] 8.2.2 Modal para agregar nueva categoría personalizada: Nombre, Sexo aplicable, Rango de edad (meses) y switch de disparador de evento (ej. parto).
-  - [ ] 8.2.3 Acción para eliminar categorías personalizadas creadas por el usuario.
-- [ ] 8.3 Validador de consistencia zootécnica y prevención de traslapes:
-  - [ ] 8.3.1 Algoritmo de validación que impida traslapes incoherentes de edad dentro del mismo sexo y tipo de explotación (ningún mes puede pertenecer a dos categorías simultáneas sin condición excluyente).
-  - [ ] 8.3.2 Validación de coherencia de rangos: edad mínima estrictamente menor que edad máxima y valores no negativos.
-  - [ ] 8.3.3 Feedback visual de error con mensajes descriptivos en caso de conflicto de rangos o nombres vacíos.
-- [ ] 8.4 Conexión reactiva con el estado global de la aplicación:
-  - [ ] 8.4.1 Persistencia inmediata de los cambios mediante `CategoriaRulesService.personalizarReglas` / `guardarConfiguracion`.
-  - [ ] 8.4.2 Notificación al `InventarioController` para disparar la reclasificación inmediata de todos los animales en memoria sin recargar la pantalla.
-  - [ ] 8.4.3 Actualización en tiempo real de badges en `InventarioScreen`, métricas del `DashboardScreen` y expediente lateral `AnimalExpedienteView`.
-- [ ] 8.5 Pruebas automatizadas y aseguramiento de calidad:
-  - [ ] 8.5.1 Tests de widget e integración para la pantalla de configuración (`test/integration/configuracion_categorias_test.dart`): verificar edición de rangos, rechazo de traslapes y restauración de fábrica.
-  - [ ] 8.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
-  - [ ] 8.5.3 Verificación completa con `flutter test` asegurando 100% de pruebas pasadas.
+- [x] 8.1 UI de visualización y navegación por tipo de explotación:
+  - [x] 8.1.1 Selector segmentado / pestañas para alternar entre tipos de explotación: *Cría*, *Ceba*, *Lechería* y *Doble Propósito*.
+  - [x] 8.1.2 Listado interactivo de tarjetas de reglas de categorías divididas por sexo (*Machos* y *Hembras*).
+  - [x] 8.1.3 Visualización clara de parámetros: nombre de la categoría, rango de edad (meses mínimo y máximo) y chip de condición especial (ej. *Requiere parto*).
+  - [x] 8.1.4 Botón para restaurar los valores de fábrica predeterminados del sistema con confirmación dialogada.
+- [x] 8.2 Modales y formularios de edición / creación de categorías:
+  - [x] 8.2.1 Modal de edición rápida para modificar rangos de edad (meses mín - máx) de categorías existentes.
+  - [x] 8.2.2 Modal para agregar nueva categoría personalizada: Nombre, Sexo aplicable, Rango de edad (meses) y switch de disparador de evento (ej. parto).
+  - [x] 8.2.3 Acción para eliminar categorías personalizadas creadas por el usuario.
+- [x] 8.3 Validador de consistencia zootécnica y prevención de traslapes:
+  - [x] 8.3.1 Algoritmo de validación que impida traslapes incoherentes de edad dentro del mismo sexo y tipo de explotación (ningún mes puede pertenecer a dos categorías simultáneas sin condición excluyente).
+  - [x] 8.3.2 Validación de coherencia de rangos: edad mínima estrictamente menor que edad máxima y valores no negativos.
+  - [x] 8.3.3 Feedback visual de error con mensajes descriptivos en caso de conflicto de rangos o nombres vacíos.
+- [x] 8.4 Conexión reactiva con el estado global de la aplicación:
+  - [x] 8.4.1 Persistencia inmediata de los cambios mediante `CategoriaRulesService.personalizarReglas` / `guardarConfiguracion`.
+  - [x] 8.4.2 Notificación al `InventarioController` para disparar la reclasificación inmediata de todos los animales en memoria sin recargar la pantalla.
+  - [x] 8.4.3 Actualización en tiempo real de badges en `InventarioScreen`, métricas del `DashboardScreen` y expediente lateral `AnimalExpedienteView`.
+- [x] 8.5 Pruebas automatizadas y aseguramiento de calidad:
+  - [x] 8.5.1 Tests de widget e integración para la pantalla de configuración (`test/integration/configuracion_categorias_test.dart`): verificar edición de rangos, rechazo de traslapes y restauración de fábrica.
+  - [x] 8.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [x] 8.5.3 Verificación completa con `flutter test` asegurando 100% de pruebas pasadas.
+
+---
+
+## Fase 9: Rediseño Integral de UI/UX para el Panel de Control (Dashboard Principal)
+- [ ] 9.1 Encabezado y acción principal de registro rápido:
+  - [ ] 9.1.1 Encabezado estilizado en el Panel de Control con título descriptivo y botón destacado arriba a la derecha: icono `+` con texto `"Registrar Animal"`.
+  - [ ] 9.1.2 Conexión del botón `"Registrar Animal"` para abrir directamente el flujo de alta de animales (asistido con retorno reactivo al dashboard).
+- [ ] 9.2 Cuarteto de tarjetas resumen (KPI Cards responsivas):
+  - [ ] 9.2.1 **Tarjeta 1 - Fincas Activas:** Indicador numérico del total de unidades productivas activas registradas con icono temático.
+  - [ ] 9.2.2 **Tarjeta 2 - Animales en Inventario:** Total de bovinos vivos y activos en el hato, discriminando estado operativo.
+  - [ ] 9.2.3 **Tarjeta 3 - Eventos del Día:** Conteo de movimientos y eventos registrados en la fecha actual (pesajes, altas, traslados, salidas y servicios).
+  - [ ] 9.2.4 **Tarjeta 4 - Valor Estimado del Hato:** Cálculo monetario acumulado del valor de los animales registrados con formateo de moneda y separadores de miles.
+- [ ] 9.3 Arquitectura visual responsiva y Material Design 3:
+  - [ ] 9.3.1 Estructura en Grid/Wrap responsivo: 4 columnas en pantallas amplias de escritorio, 2 columnas en tablets y distribución adaptativa sin desbordamientos (*anti-overflow*) en móviles.
+  - [ ] 9.3.2 Tarjetas con elevación sutil, bordes suaves, paleta de colores coherente con `AppColors` y soporte para scroll vertical fluido.
+  - [ ] 9.3.3 Conexión reactiva con `InventarioController` para actualización en tiempo real de los 4 KPIs sin recargar la pantalla.
+- [ ] 9.4 Pruebas automatizadas y aseguramiento de calidad:
+  - [ ] 9.4.1 Tests de widget e integración para el nuevo Dashboard (`test/integration/dashboard_screen_test.dart`): verificar renderizado de las 4 tarjetas, formateo monetario, cálculo de eventos y navegación del botón `"Registrar Animal"`.
+  - [ ] 9.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [ ] 9.4.3 Verificación de suite completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+
 
 
 
