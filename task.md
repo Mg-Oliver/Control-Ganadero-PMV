@@ -258,6 +258,25 @@
   - [ ] 12.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
   - [ ] 12.5.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
 
+---
+
+## Fase 13: Optimización del Formulario de Registro de Animal (Simplificación, Autocompletado y Fusión Genética/Genealógica)
+- [ ] 13.1 Ocultamiento y automatización del campo "Código de sistema":
+  - [ ] 13.1.1 Remover o retirar visualmente el campo de texto "Código de sistema" en `AnimalForm` (`lib/ui/screens/creacion/forms/animal_form.dart`).
+  - [ ] 13.1.2 Garantizar que el guardado mantenga el campo vacío o nulo para que el disparador de base de datos (`trg_generar_codigo_animal`) y el backend asignen automáticamente la secuencia `GAN-XXXXXX` en segundo plano sin intervención del usuario.
+- [ ] 13.2 Regla de negocio y autocompletado inteligente de "Nombre o Alias":
+  - [ ] 13.2.1 Implementar lógica de fallback en el controlador/formulario: si el usuario deja en blanco o con espacios el campo "Nombre o Alias", asignar automáticamente el valor ingresado en "Arete de manejo" al momento de guardar.
+  - [ ] 13.2.2 Clarificar en el placeholder o texto de ayuda del campo que si se omite, adoptará el número de arete de manejo por defecto.
+- [ ] 13.3 Fusión de las secciones "Genealogía" y "Genética / Composición racial":
+  - [ ] 13.3.1 Unificar las dos secciones en un único bloque visual cohesivo titulado *"Genética y Linaje"*.
+  - [ ] 13.3.2 Reorganizar la captura en un flujo fluido: selección de composición racial (Raza pura vs. Cruces con fracciones) inmediatamente seguido de la asignación de progenitores (Padre y Madre internos o de catálogo externo).
+  - [ ] 13.3.3 Reducción de pasos, scroll y fricción operativa para agilizar el registro masivo en campo.
+- [ ] 13.4 Pruebas automatizadas y aseguramiento de calidad:
+  - [ ] 13.4.1 Tests de widget e integración (`test/integration/registro_animal_optimizado_test.dart`): verificar ausencia del input de código de sistema, autoasignación de arete de manejo como alias ante campo vacío y correcto funcionamiento del bloque unificado de genética y linaje.
+  - [ ] 13.4.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [ ] 13.4.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+
+
 
 
 
