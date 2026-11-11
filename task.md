@@ -116,5 +116,28 @@
   - [ ] 6.4.2 Ejecutar `flutter analyze` y asegurar **0 errores y 0 advertencias**.
   - [ ] 6.4.3 Ejecutar `flutter test` y asegurar que el 100% de las pruebas pasen satisfactoriamente.
 
+---
+
+## Fase 7: Motor de Reglas Zootécnicas y Configuración Dinámica de Categorización
+- [ ] 7.1 Modelos de dominio y configuración de categorías (`CategoriaRuleModel` / `CategoriaConfigModel`):
+  - [ ] 7.1.1 Definición de reglas parametrizadas: umbrales de edad en meses (mínimo y máximo), sexo (`Macho` / `Hembra`), tipo de explotación (`Cría`, `Ceba`, `Lechería`, `Doble Propósito`), condición de parto (`requiereParto: true/false`) y etiqueta de categoría resultante.
+  - [ ] 7.1.2 Implementación de la matriz de reglas por defecto:
+    - **Hembras:** 0 a 4 meses -> *"Ternera"*; 5 a 10 meses -> *"Novilla"*; evento de parto registrado (independiente de la edad) -> *"Vaca"*.
+    - **Machos:** 0 a 4 meses -> *"Ternero"*; 5 a 10 meses -> *"Novillo"*; a partir de 24 meses (2 años) -> *"Toro"*.
+  - [ ] 7.1.3 Soporte de serialización y deserialización JSON para persistencia de configuraciones personalizadas.
+- [ ] 7.2 Servicio y motor de evaluación de reglas (`CategoriaRulesService`):
+  - [ ] 7.2.1 Método evaluador dinámico `determinarCategoria({required DateTime fechaNacimiento, required SexoAnimal sexo, int numeroPartos = 0, TipoExplotacion? tipoExplotacion})`.
+  - [ ] 7.2.2 Mecanismo de persistencia local (vía `SharedPreferences` o tabla de configuración en Supabase) con recuperación y fallback automático a los valores predeterminados citados.
+  - [ ] 7.2.3 Métodos para agregar, editar o personalizar umbrales y categorías por tipo de explotación específica.
+- [ ] 7.3 Integración en la capa de datos y visualización:
+  - [ ] 7.3.1 Incorporar getter o helper de categoría zootécnica dinámica en `AnimalModel` y expediente del animal.
+  - [ ] 7.3.2 Renderizado del badge de categoría zootécnica en `AnimalCard`, `EntityDataTable` y `AnimalExpedienteView`.
+- [ ] 7.4 Pruebas unitarias automatizadas (`test/unit/categoria_rules_test.dart`):
+  - [ ] 7.4.1 Test de categorización en machos: verificar cálculo exacto en rangos de 0-4 meses (Ternero), 5-10 meses (Novillo), etapas intermedias y >=24 meses (Toro).
+  - [ ] 7.4.2 Test de categorización en hembras: verificar rangos de 0-4 meses (Ternera), 5-10 meses (Novilla), y transición forzada a "Vaca" inmediata al registrar 1 o más partos sin importar la edad.
+  - [ ] 7.4.3 Test de persistencia y personalización: verificar modificación de umbrales por tipo de explotación y correcto funcionamiento del fallback ante fallos o datos vacíos.
+  - [ ] 7.4.4 Verificación con `flutter analyze` (0 errores, 0 advertencias) y `flutter test` (100% aprobadas).
+
+
 
 
