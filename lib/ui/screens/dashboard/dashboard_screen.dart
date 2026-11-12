@@ -138,16 +138,6 @@ class _DashboardHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Panel de Control',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
                 _formatFecha(DateTime.now()),
                 style: const TextStyle(
                   fontSize: 13,
