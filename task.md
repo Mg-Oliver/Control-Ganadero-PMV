@@ -326,6 +326,24 @@
   - [ ] 15.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
   - [ ] 15.5.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
 
+---
+
+## Fase 16: Cobertura Integral de Pruebas Automatizadas y Blindaje QA contra Regresiones
+- [ ] 16.1 Pruebas unitarias de reglas de categorización y atributos dinámicos (`test/unit/`):
+  - [ ] 16.1.1 Suite de validación zootécnica: probar exhaustivamente categorización con reglas por defecto (Ternera/Novilla/Vaca según edad y partos; Ternero/Novillo/Toro) y reglas personalizadas con umbrales específicos por tipo de explotación (*Cría*, *Ceba*, *Lechería*, *Doble Propósito*).
+  - [ ] 16.1.2 Suite de autocompletado y consistencia de atributos: verificar que cuando el campo `nombre_alias` sea nulo, vacío o contenga solo espacios, se asigne automáticamente el valor de `arete_manejo` al persistir el animal.
+- [ ] 16.2 Pruebas de integración de inventario y aislamiento de toros donantes (`test/integration/`):
+  - [ ] 16.2.1 Blindaje de inventario vivo vs. catálogo de donantes: verificar que los registros de `toros_donantes` permanezcan confinados a su colección especializada y NO se contabilicen ni listen en el inventario general de animales vivos de las fincas.
+  - [ ] 16.2.2 Verificación de trazabilidad por IA: comprobar que las crías con padre donante reflejen correctamente la referencia de pajuela y ancestros en el expediente sin alterar el inventario vivo.
+- [ ] 16.3 Pruebas de métricas y gráficos del Dashboard (`test/integration/`):
+  - [ ] 16.3.1 Validación matemática de los 4 KPI cards: cálculo exacto de Fincas Activas, Total de Animales, Eventos del Día (movimientos registrados en la fecha actual) y Valor Monetario Acumulado del hato con formateo correcto.
+  - [ ] 16.3.2 Validación del gráfico de distribución poblacional: verificar que las cabezas de ganado se agreguen y segmenten con total exactitud según su sexo y categoría zootécnica dinámica.
+- [ ] 16.4 Ejecución de suites, corrección de regresiones y verificación global:
+  - [ ] 16.4.1 Ejecutar `flutter test` sobre toda la suite de pruebas unitarias, de widgets y de integración, corrigiendo cualquier discrepancia o regresión detectada en el código base.
+  - [ ] 16.4.2 Ejecutar `flutter analyze` garantizando **0 errores y 0 advertencias** (`No issues found!`).
+  - [ ] 16.4.3 Confirmación de aprobación del 100% de las pruebas automatizadas.
+
+
 
 
 
