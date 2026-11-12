@@ -182,7 +182,9 @@ class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
                         _abrirCreacion(ModuloCreacionTab.lote),
                   ),
                   // 2: Ciclo Reproductivo
-                  const ReproduccionScreen(),
+                  ReproduccionScreen(
+                    inventarioController: _inventarioController,
+                  ),
                   // 3: Configuración
                   ConfiguracionScreen(
                     inventarioController: _inventarioController,
