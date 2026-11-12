@@ -131,40 +131,43 @@ class _DashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _formatFecha(DateTime.now()),
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // ── 9.1.1 / 9.1.2 Botón "Registrar Animal" destacado ──
-        FilledButton.icon(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fecha = Text(
+          _formatFecha(DateTime.now()),
+          style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+        );
+        final registrar = FilledButton.icon(
           onPressed: onRegistrarAnimal,
-          icon: const Icon(Icons.add_rounded, size: 18),
+          icon: const Icon(Icons.add_rounded, size: 26),
           label: const Text(
             'Registrar Animal',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.botonPrincipal,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            minimumSize: const Size(0, 60),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
-        ),
-      ],
+        );
+        if (constraints.maxWidth < 600) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [fecha, const SizedBox(height: 16), registrar],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: fecha),
+            const SizedBox(width: 24),
+            registrar,
+          ],
+        );
+      },
     );
   }
 

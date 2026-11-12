@@ -64,10 +64,7 @@ const List<String> _sectionTitles = [
 class MainWorkspaceShell extends StatefulWidget {
   final int initialIndex;
 
-  const MainWorkspaceShell({
-    super.key,
-    this.initialIndex = 0,
-  });
+  const MainWorkspaceShell({super.key, this.initialIndex = 0});
 
   @override
   State<MainWorkspaceShell> createState() => _MainWorkspaceShellState();
@@ -128,14 +125,16 @@ class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
             child: Scaffold(
               backgroundColor: AppColors.background,
               appBar: AppBar(
-                automaticallyImplyLeading: false, // Sin ícono de menú hamburguesa
+                automaticallyImplyLeading:
+                    false, // Sin ícono de menú hamburguesa
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
+                toolbarHeight: _selectedIndex == 0 ? 80 : kToolbarHeight,
                 title: Text(
                   _sectionTitles[_selectedIndex],
-                  style: const TextStyle(
-                    fontSize: 17,
+                  style: TextStyle(
+                    fontSize: _selectedIndex == 0 ? 30 : 17,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -146,7 +145,8 @@ class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
                       icon: const Icon(Icons.dataset_outlined, size: 20),
                       onPressed: () async {
                         SeedService.cargarEnControlador(_inventarioController);
-                        final sincronizado = await SeedService.repoblarEnSupabase();
+                        final sincronizado =
+                            await SeedService.repoblarEnSupabase();
                         if (!context.mounted) return;
                         AppFeedback.mostrarExito(
                           context: context,
@@ -164,21 +164,28 @@ class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
                   // 0: Panel de Control
                   DashboardScreen(
                     controller: _inventarioController,
-                    onGoToExpediente: () => _abrirCreacion(ModuloCreacionTab.animal),
+                    onGoToExpediente: () =>
+                        _abrirCreacion(ModuloCreacionTab.animal),
                     onGoToInventario: () => _navigateTo(1),
-                    onRegistrarAnimal: () => _abrirCreacion(ModuloCreacionTab.animal),
+                    onRegistrarAnimal: () =>
+                        _abrirCreacion(ModuloCreacionTab.animal),
                   ),
                   // 1: Inventario
                   InventarioScreen(
                     externalController: _inventarioController,
-                    onGoToCreacion: () => _abrirCreacion(ModuloCreacionTab.animal),
-                    onGoToCrearFinca: () => _abrirCreacion(ModuloCreacionTab.finca),
-                    onGoToCrearManga: () => _abrirCreacion(ModuloCreacionTab.lote),
+                    onGoToCreacion: () =>
+                        _abrirCreacion(ModuloCreacionTab.animal),
+                    onGoToCrearFinca: () =>
+                        _abrirCreacion(ModuloCreacionTab.finca),
+                    onGoToCrearManga: () =>
+                        _abrirCreacion(ModuloCreacionTab.lote),
                   ),
                   // 2: Ciclo Reproductivo
                   const ReproduccionScreen(),
                   // 3: Configuración
-                  ConfiguracionScreen(inventarioController: _inventarioController),
+                  ConfiguracionScreen(
+                    inventarioController: _inventarioController,
+                  ),
                 ],
               ),
             ),
@@ -188,4 +195,3 @@ class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
     );
   }
 }
-
