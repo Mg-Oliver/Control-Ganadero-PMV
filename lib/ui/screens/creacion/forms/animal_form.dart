@@ -919,26 +919,6 @@ class _AnimalFormState extends State<AnimalForm> {
                 ),
               ],
               const SizedBox(height: 16),
-              const Divider(height: 28),
-              const Row(
-                children: [
-                  Icon(
-                    Icons.account_tree_outlined,
-                    size: 18,
-                    color: AppColors.primary,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Linaje y Progenitores',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
               CustomFormDropdown<String>(
                 label: 'Tipo de concepción',
                 value: _tipoPruebaPaterna,

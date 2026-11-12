@@ -55,6 +55,8 @@ class MarcasHierro {
 }
 
 class AnimalModel {
+  // Respaldo versionado cuando la base de datos aún no tiene las nuevas columnas.
+  static const metadataRegistroKey = '_registro_animal_v1';
   final bool esExterno;
   final String id;
   final String codigoSistema;
@@ -67,7 +69,8 @@ class AnimalModel {
   final String? razaPuraNombre;
   final List<Map<String, String>> composicionCruces;
   final String razaEtiquetaDisplay;
-  final String tipoExplotacion; // 'Ceba' | 'Cria' | 'Lecheria' | 'Doble Proposito'
+  final String
+  tipoExplotacion; // 'Ceba' | 'Cria' | 'Lecheria' | 'Doble Proposito'
   final DateTime fechaNacimiento;
   final bool fechaNacimientoExacta;
   final String origen; // 'Nacido en la finca' | 'Comprado en subasta' | ...
@@ -167,8 +170,12 @@ class AnimalModel {
       );
 
   factory AnimalModel.fromJson(Map<String, dynamic> json) {
+    final marcas = json['marcas_hierro'];
+    final compatRaw = marcas is Map ? marcas[metadataRegistroKey] : null;
+    final compat = compatRaw is Map ? compatRaw : const {};
     final crucesRaw = json['composicion_cruces'] as List<dynamic>?;
-    final cruces = crucesRaw?.map((item) {
+    final cruces =
+        crucesRaw?.map((item) {
           if (item is Map) {
             return item.map(
               (key, value) => MapEntry(key.toString(), value.toString()),
@@ -196,7 +203,8 @@ class AnimalModel {
     }
 
     return AnimalModel(
-      esExterno: json['es_externo'] as bool? ?? false,
+      esExterno:
+          compat['es_externo'] as bool? ?? json['es_externo'] as bool? ?? false,
       id: json['id'] as String,
       codigoSistema: (json['codigo_sistema'] as String?) ?? '',
       areteManejo: json['arete_manejo'] as String,
@@ -232,7 +240,8 @@ class AnimalModel {
         json['marcas_hierro'] as Map<String, dynamic>?,
       ),
       observaciones: json['observaciones'] as String?,
-      fotos: (json['fotos'] as List<dynamic>?)
+      fotos:
+          (json['fotos'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
@@ -242,7 +251,10 @@ class AnimalModel {
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'].toString())
           : null,
-      numeroPartos: (json['numero_partos'] as int?) ?? 0,
+      numeroPartos:
+          (compat['numero_partos'] as num?)?.toInt() ??
+          (json['numero_partos'] as num?)?.toInt() ??
+          0,
       fincaNombre: fincaMap?['nombre'] as String?,
       fincaIdentificador: fincaMap?['identificador'] as String?,
       loteNombre: loteMap?['nombre'] as String?,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../helpers/animales_schema_server.dart';
 import 'package:intl/intl.dart';
 import 'package:bovino_mvp/data/models/animal_model.dart';
 import 'package:bovino_mvp/data/models/finca_model.dart';
@@ -145,6 +147,56 @@ void main() {
       expect(servicio.registrado?.razaPuraNombre, 'Holstein');
       expect(servicio.registrado?.loteId, isNull);
       expect(find.textContaining('TORO-EXT ·'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'padre externo se guarda con el esquema real antiguo y queda asignado',
+    (tester) async {
+      final server = AnimalesSchemaServer();
+      final client = (await tester.runAsync(
+        () async => SupabaseClient(
+          'https://schema.test',
+          'public-test-key',
+          authOptions: const AuthClientOptions(autoRefreshToken: false),
+          httpClient: server.client,
+        ),
+      ))!;
+      addTearDown(() => tester.runAsync(client.dispose));
+      final s = AnimalesService(client: client);
+      await abrirFormulario(tester, servicio: s);
+      final registrar = find.text('Registrar').first;
+      await tester.ensureVisible(registrar);
+      await tester.tap(registrar);
+      await tester.pumpAndSettle();
+      await tester.enterText(campo('Código de animal'), 'TORO-COMPAT');
+      final raza = find.text(
+        'Buscar y seleccionar raza pura (Holstein, Brahman, Gyr...)',
+      );
+      await tester.ensureVisible(raza);
+      await tester.tap(raza);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'Holstein');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Holstein').last);
+      await tester.pumpAndSettle();
+      final pertenencia = find.text('¿Forma parte de la finca?');
+      await tester.ensureVisible(pertenencia);
+      await tester.tap(pertenencia);
+      final guardar = find.text('Guardar Expediente Animal');
+      await tester.ensureVisible(guardar);
+      await tester.tap(guardar);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('TORO-COMPAT ·'), findsOneWidget);
+      expect(server.animales.length, 1);
+      expect(
+        (await tester.runAsync(
+          s.consultarInventarioRelacional,
+        ))!.single.esExterno,
+        isTrue,
+      );
+      expect(find.text('Linaje y Progenitores'), findsNothing);
+      expect(tester.takeException(), isNull);
     },
   );
 

@@ -43,6 +43,7 @@ dependencies:
   fl_chart: ^0.70.0
 
 dev_dependencies:
+  http: ^1.6.0
   flutter_test:
     sdk: flutter
 

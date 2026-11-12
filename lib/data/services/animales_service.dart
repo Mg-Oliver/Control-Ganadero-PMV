@@ -4,7 +4,62 @@ import '../models/animal_model.dart';
 import '../models/genealogia_model.dart';
 
 class AnimalesService {
-  SupabaseClient get _supabase => SupabaseConfig.client;
+  final SupabaseClient? _client;
+  AnimalesService({SupabaseClient? client}) : _client = client;
+  SupabaseClient get _supabase => _client ?? SupabaseConfig.client;
+
+  String? _columnaAusente(PostgrestException error, Iterable<String> columnas) {
+    if (!['42703', 'PGRST204'].contains(error.code)) return null;
+    return columnas.where((c) => error.message.contains(c)).firstOrNull;
+  }
+
+  Future<T> _escribirAnimal<T>(
+    AnimalModel animal,
+    Map<String, dynamic> datos,
+    Future<T> Function(Map<String, dynamic>) escribir,
+  ) async {
+    final payload = Map<String, dynamic>.from(datos);
+    while (true) {
+      try {
+        return await escribir(payload);
+      } on PostgrestException catch (error) {
+        final columna = _columnaAusente(error, ['es_externo', 'numero_partos']);
+        if (columna == null || !payload.containsKey(columna)) rethrow;
+        payload.remove(columna);
+        payload['marcas_hierro'] = {
+          ...animal.marcasHierro.toJson(),
+          AnimalModel.metadataRegistroKey: {
+            'es_externo': animal.esExterno,
+            'numero_partos': animal.numeroPartos,
+          },
+        };
+      }
+    }
+  }
+
+  Future<T> _escribirGenealogia<T>(
+    Map<String, dynamic> datos,
+    Future<T> Function(Map<String, dynamic>) escribir,
+  ) async {
+    final payload = Map<String, dynamic>.from(datos);
+    while (true) {
+      try {
+        return await escribir(payload);
+      } on PostgrestException catch (error) {
+        final columna = _columnaAusente(error, [
+          'toro_donante_id',
+          'toro_donante_snapshot',
+        ]);
+        // Solo omitir columnas opcionales vacías; nunca descartar un donante asignado.
+        if (columna == null ||
+            !payload.containsKey(columna) ||
+            payload[columna] != null) {
+          rethrow;
+        }
+        payload.remove(columna);
+      }
+    }
+  }
 
   static const String _selectRelacional =
       '*, fincas(id, nombre, identificador), genealogia!genealogia_animal_id_fkey(*)';
@@ -68,9 +123,7 @@ class AnimalesService {
       // Fallback seguro si el nombre del constraint FK varía en la instancia
       final rawAnimales = await _supabase
           .from('animales')
-          .select(
-            '*, fincas(id, nombre, identificador)',
-          )
+          .select('*, fincas(id, nombre, identificador)')
           .order('created_at', ascending: false);
       final rawGenealogias = await _supabase.from('genealogia').select();
 
@@ -130,13 +183,15 @@ class AnimalesService {
     GenealogiaModel? genealogia,
   }) async {
     final includeId = animal.id.trim().isNotEmpty;
-    final response = await _supabase
-        .from('animales')
-        .insert(animal.toJson(includeId: includeId, includeCodigo: false))
-        .select(
-          '*, fincas(id, nombre, identificador)',
-        )
-        .single();
+    final response = await _escribirAnimal<Map<String, dynamic>>(
+      animal,
+      animal.toJson(includeId: includeId, includeCodigo: false),
+      (payload) => _supabase
+          .from('animales')
+          .insert(payload)
+          .select('*, fincas(id, nombre, identificador)')
+          .single(),
+    );
 
     var nuevoAnimal = AnimalModel.fromJson(response);
 
@@ -151,18 +206,28 @@ class AnimalesService {
           genealogia.tipoPruebaMaterna != 'Sin confirmar';
 
       if (tieneDatosGenealogia) {
-        final genInsertada = await _supabase
-            .from('genealogia')
-            .insert(
-              genealogia
-                  .copyWith(animalId: nuevoAnimal.id)
-                  .toJson(includeId: false),
-            )
-            .select()
-            .single();
-        nuevoAnimal = nuevoAnimal.copyWith(
-          genealogia: GenealogiaModel.fromJson(genInsertada),
-        );
+        try {
+          final genInsertada = await _escribirGenealogia<Map<String, dynamic>>(
+            genealogia
+                .copyWith(animalId: nuevoAnimal.id)
+                .toJson(includeId: false),
+            (payload) =>
+                _supabase.from('genealogia').insert(payload).select().single(),
+          );
+          nuevoAnimal = nuevoAnimal.copyWith(
+            genealogia: GenealogiaModel.fromJson(genInsertada),
+          );
+        } catch (error, stack) {
+          // Revierte únicamente el animal recién insertado si su genealogía no se guardó.
+          try {
+            await _supabase.from('animales').delete().eq('id', nuevoAnimal.id);
+          } catch (_) {
+            throw StateError(
+              'Se creó el animal ${nuevoAnimal.codigoSistema}, pero no se completó su genealogía. Revise ese expediente antes de volver a registrarlo.',
+            );
+          }
+          Error.throwWithStackTrace(error, stack);
+        }
       }
     }
 
@@ -179,24 +244,26 @@ class AnimalesService {
     json.remove('lotes');
     json.remove('genealogia');
 
-    await _supabase.from('animales').update(json).eq('id', animal.id);
+    await _escribirAnimal<void>(animal, json, (payload) async {
+      await _supabase.from('animales').update(payload).eq('id', animal.id);
+    });
 
     if (animal.genealogia != null) {
-      await _supabase
-          .from('genealogia')
-          .upsert(
-            animal.genealogia!
-                .copyWith(animalId: animal.id)
-                .toJson(includeId: false),
-            onConflict: 'animal_id',
-          );
+      await _escribirGenealogia<void>(
+        animal.genealogia!
+            .copyWith(animalId: animal.id)
+            .toJson(includeId: false),
+        (payload) async {
+          await _supabase
+              .from('genealogia')
+              .upsert(payload, onConflict: 'animal_id');
+        },
+      );
     }
 
     final response = await _supabase
         .from('animales')
-        .select(
-          '*, fincas(id, nombre, identificador)',
-        )
+        .select('*, fincas(id, nombre, identificador)')
         .eq('id', animal.id)
         .single();
 
