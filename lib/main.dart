@@ -63,8 +63,13 @@ const List<String> _sectionTitles = [
 
 class MainWorkspaceShell extends StatefulWidget {
   final int initialIndex;
+  final InventarioController? inventarioController;
 
-  const MainWorkspaceShell({super.key, this.initialIndex = 0});
+  const MainWorkspaceShell({
+    super.key,
+    this.initialIndex = 0,
+    this.inventarioController,
+  });
 
   @override
   State<MainWorkspaceShell> createState() => _MainWorkspaceShellState();
@@ -72,22 +77,30 @@ class MainWorkspaceShell extends StatefulWidget {
 
 class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
   late int _selectedIndex;
-  final _inventarioController = InventarioController();
+  late final InventarioController _inventarioController;
+  final _navigatorKeys = List.generate(4, (_) => GlobalKey<NavigatorState>());
+  final _registroTab = ValueNotifier<int?>(null);
+  Route<void>? _registroRoute;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex.clamp(0, 3);
-    _inventarioController.inicializar().then((_) {
-      if (_inventarioController.allAnimales.isEmpty) {
-        SeedService.cargarEnControlador(_inventarioController);
-      }
-    });
+    _inventarioController =
+        widget.inventarioController ?? InventarioController();
+    if (widget.inventarioController == null) {
+      _inventarioController.inicializar().then((_) {
+        if (mounted && _inventarioController.allAnimales.isEmpty) {
+          SeedService.cargarEnControlador(_inventarioController);
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
-    _inventarioController.dispose();
+    if (widget.inventarioController == null) _inventarioController.dispose();
+    _registroTab.dispose();
     super.dispose();
   }
 
@@ -95,19 +108,39 @@ class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
     setState(() => _selectedIndex = index.clamp(0, 3));
   }
 
-  void _abrirCreacion(ModuloCreacionTab tab) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => CreacionScreen(
-          inventarioController: _inventarioController,
-          showAppBar: true,
-          initialTab: tab,
-          onFincaCreatedGlobal: _inventarioController.registrarFincaOptimista,
-          onLoteCreatedGlobal: _inventarioController.registrarLoteOptimista,
-          onAnimalCreatedGlobal: _inventarioController.registrarAnimalOptimista,
-        ),
+  void _volverAlRegistro() {
+    final tab = _registroTab.value;
+    final route = _registroRoute;
+    if (tab == null || route == null) return;
+    _navigatorKeys[tab].currentState!.popUntil((r) => identical(r, route));
+    _navigateTo(tab);
+  }
+
+  Future<void> _abrirCreacion(ModuloCreacionTab tab) async {
+    if (tab == ModuloCreacionTab.animal && _registroTab.value != null) {
+      _volverAlRegistro();
+      return;
+    }
+    final origen = _selectedIndex;
+    final route = MaterialPageRoute<void>(
+      builder: (_) => CreacionScreen(
+        inventarioController: _inventarioController,
+        showAppBar: true,
+        initialTab: tab,
+        onFincaCreatedGlobal: _inventarioController.registrarFincaOptimista,
+        onLoteCreatedGlobal: _inventarioController.registrarLoteOptimista,
+        onAnimalCreatedGlobal: _inventarioController.registrarAnimalOptimista,
       ),
     );
+    if (tab == ModuloCreacionTab.animal) {
+      _registroRoute = route;
+      _registroTab.value = origen;
+    }
+    await _navigatorKeys[origen].currentState!.push(route);
+    if (mounted && identical(_registroRoute, route)) {
+      _registroRoute = null;
+      _registroTab.value = null;
+    }
   }
 
   @override
@@ -123,78 +156,94 @@ class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
           ),
           // Contenido principal de la aplicación
           Expanded(
-            child: Scaffold(
-              backgroundColor: AppColors.background,
-              appBar: AppBar(
-                automaticallyImplyLeading:
-                    false, // Sin ícono de menú hamburguesa
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                toolbarHeight: _selectedIndex == 0 ? 80 : kToolbarHeight,
-                title: Text(
-                  _sectionTitles[_selectedIndex],
-                  style: TextStyle(
-                    fontSize: _selectedIndex == 0 ? 30 : 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                actions: [
-                  if (_selectedIndex == 0)
-                    IconButton(
-                      tooltip: 'Poblar Datos Semilla (Demo)',
-                      icon: const Icon(Icons.dataset_outlined, size: 20),
-                      onPressed: () async {
-                        SeedService.cargarEnControlador(_inventarioController);
-                        final sincronizado =
-                            await SeedService.repoblarEnSupabase();
-                        if (!context.mounted) return;
-                        AppFeedback.mostrarExito(
-                          context: context,
-                          mensaje: sincronizado
-                              ? '¡Datos semilla cargados y sincronizados con Supabase! (3 fincas, 6 mangas y 28 animales)'
-                              : '¡Datos semilla cargados con éxito! (3 fincas, 6 mangas y 28 animales)',
-                        );
-                      },
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: [
+                for (var index = 0; index < 4; index++)
+                  NavigatorPopHandler<void>(
+                    enabled: _selectedIndex == index,
+                    onPopWithResult: (_) {
+                      final navigator = _navigatorKeys[index].currentState;
+                      if (_selectedIndex == index &&
+                          navigator != null &&
+                          navigator.canPop()) {
+                        navigator.pop();
+                      }
+                    },
+                    child: Navigator(
+                      key: _navigatorKeys[index],
+                      onGenerateRoute: (_) => MaterialPageRoute<void>(
+                        builder: (_) => ValueListenableBuilder<int?>(
+                          valueListenable: _registroTab,
+                          builder: (_, _, _) => _buildSection(index),
+                        ),
+                      ),
                     ),
-                ],
-              ),
-              body: IndexedStack(
-                index: _selectedIndex,
-                children: [
-                  // 0: Panel de Control
-                  DashboardScreen(
-                    controller: _inventarioController,
-                    onGoToExpediente: () =>
-                        _abrirCreacion(ModuloCreacionTab.animal),
-                    onGoToInventario: () => _navigateTo(1),
-                    onRegistrarAnimal: () =>
-                        _abrirCreacion(ModuloCreacionTab.animal),
                   ),
-                  // 1: Inventario
-                  InventarioScreen(
-                    externalController: _inventarioController,
-                    onGoToCreacion: () =>
-                        _abrirCreacion(ModuloCreacionTab.animal),
-                    onGoToCrearFinca: () =>
-                        _abrirCreacion(ModuloCreacionTab.finca),
-                    onGoToCrearManga: () =>
-                        _abrirCreacion(ModuloCreacionTab.lote),
-                  ),
-                  // 2: Ciclo Reproductivo
-                  ReproduccionScreen(
-                    inventarioController: _inventarioController,
-                  ),
-                  // 3: Configuración
-                  ConfiguracionScreen(
-                    inventarioController: _inventarioController,
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildSection(int index) => Scaffold(
+    backgroundColor: AppColors.background,
+    appBar: AppBar(
+      automaticallyImplyLeading: false, // Sin ícono de menú hamburguesa
+      backgroundColor: AppColors.primary,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      toolbarHeight: index == 0 ? 80 : kToolbarHeight,
+      title: Text(
+        _sectionTitles[index],
+        style: TextStyle(
+          fontSize: index == 0 ? 30 : 17,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      actions: [
+        if (index == 0)
+          IconButton(
+            tooltip: 'Poblar Datos Semilla (Demo)',
+            icon: const Icon(Icons.dataset_outlined, size: 20),
+            onPressed: () async {
+              SeedService.cargarEnControlador(_inventarioController);
+              final sincronizado = await SeedService.repoblarEnSupabase();
+              if (!mounted) return;
+              AppFeedback.mostrarExito(
+                context: context,
+                mensaje: sincronizado
+                    ? '¡Datos semilla cargados y sincronizados con Supabase! (3 fincas, 6 mangas y 28 animales)'
+                    : '¡Datos semilla cargados con éxito! (3 fincas, 6 mangas y 28 animales)',
+              );
+            },
+          ),
+      ],
+    ),
+    body: <Widget Function()>[
+      // 0: Panel de Control
+      () => DashboardScreen(
+        controller: _inventarioController,
+        onGoToExpediente: () => _abrirCreacion(ModuloCreacionTab.animal),
+        onGoToInventario: () => _navigateTo(1),
+        onRegistrarAnimal: () => _abrirCreacion(ModuloCreacionTab.animal),
+      ),
+      // 1: Inventario
+      () => InventarioScreen(
+        externalController: _inventarioController,
+        onVolverAlRegistro: _registroTab.value != null
+            ? _volverAlRegistro
+            : null,
+        onGoToCreacion: () => _abrirCreacion(ModuloCreacionTab.animal),
+        onGoToCrearFinca: () => _abrirCreacion(ModuloCreacionTab.finca),
+        onGoToCrearManga: () => _abrirCreacion(ModuloCreacionTab.lote),
+      ),
+      // 2: Ciclo Reproductivo
+      () => ReproduccionScreen(inventarioController: _inventarioController),
+      // 3: Configuración
+      () => ConfiguracionScreen(inventarioController: _inventarioController),
+    ][index](),
+  );
 }

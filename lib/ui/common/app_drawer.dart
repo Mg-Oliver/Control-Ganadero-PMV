@@ -14,18 +14,20 @@ class AppDrawer extends StatelessWidget {
   static const _destinations = [
     (Icons.dashboard_outlined, Icons.dashboard_rounded, 'Panel de Control'),
     (Icons.inventory_2_outlined, Icons.inventory_2_rounded, 'Inventario'),
-    (Icons.favorite_border_rounded, Icons.favorite_rounded, 'Ciclo Reproductivo'),
+    (
+      Icons.favorite_border_rounded,
+      Icons.favorite_rounded,
+      'Ciclo Reproductivo',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 240,
+      width: 280,
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          right: BorderSide(color: AppColors.border, width: 1),
-        ),
+        border: Border(right: BorderSide(color: AppColors.border, width: 1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,7 +77,7 @@ class _DrawerHeader extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primary,   // Azul cielo
+            AppColors.primary, // Azul cielo
             AppColors.secondary, // Verde pasto
           ],
         ),
@@ -165,9 +167,7 @@ class _DrawerItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: selected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                       color: selected
                           ? AppColors.primary
                           : AppColors.textPrimary,
@@ -182,4 +182,3 @@ class _DrawerItem extends StatelessWidget {
     );
   }
 }
-
