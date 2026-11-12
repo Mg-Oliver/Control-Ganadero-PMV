@@ -42,9 +42,10 @@ class DashboardScreen extends StatelessWidget {
         int eventosHoy = controller.allAnimales.where((a) {
           final entrada = a.fechaEntrada;
           final salida = a.fechaSalida;
-          final altaHoy = !entrada.isBefore(todayStart) &&
-              entrada.isBefore(todayEnd);
-          final salidaHoy = salida != null &&
+          final altaHoy =
+              !entrada.isBefore(todayStart) && entrada.isBefore(todayEnd);
+          final salidaHoy =
+              salida != null &&
               !salida.isBefore(todayStart) &&
               salida.isBefore(todayEnd);
           return altaHoy || salidaHoy;
@@ -158,10 +159,9 @@ class _DashboardHeader extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.botonPrincipal,
             foregroundColor: Colors.white,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -173,11 +173,27 @@ class _DashboardHeader extends StatelessWidget {
 
   static String _formatFecha(DateTime d) {
     final meses = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
     ];
     final diasSemana = [
-      'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo',
+      'lunes',
+      'martes',
+      'miércoles',
+      'jueves',
+      'viernes',
+      'sábado',
+      'domingo',
     ];
     return '${diasSemana[d.weekday - 1]}, ${d.day} de ${meses[d.month - 1]} de ${d.year}';
   }
@@ -296,11 +312,7 @@ class _KpiGrid extends StatelessWidget {
         return Wrap(
           spacing: spacing,
           runSpacing: spacing,
-          children: cards
-              .map(
-                (c) => SizedBox(width: cardW, child: c),
-              )
-              .toList(),
+          children: cards.map((c) => SizedBox(width: cardW, child: c)).toList(),
         );
       },
     );
@@ -421,7 +433,7 @@ class _QuickActionsGrid extends StatelessWidget {
       _QuickAction(
         icon: Icons.pets_rounded,
         label: '+ Nuevo Animal',
-        color: const Color(0xFF0369A1),
+        color: AppColors.botonPrincipal,
         onTap: onGoToExpediente,
       ),
     ];
@@ -431,21 +443,25 @@ class _QuickActionsGrid extends StatelessWidget {
         if (isWide) {
           return Row(
             children: actions
-                .map((a) => Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: a,
-                      ),
-                    ))
+                .map(
+                  (a) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: a,
+                    ),
+                  ),
+                )
                 .toList(),
           );
         }
         return Column(
           children: actions
-              .map((a) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: a,
-                  ))
+              .map(
+                (a) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: a,
+                ),
+              )
               .toList(),
         );
       },
@@ -533,16 +549,19 @@ class _SeedCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               SeedService.cargarEnControlador(controller);
+              final sincronizado = await SeedService.repoblarEnSupabase();
+              if (!context.mounted) return;
               AppFeedback.mostrarExito(
                 context: context,
-                mensaje:
-                    '¡Datos semilla cargados! (3 fincas, 6 mangas y 28 animales)',
+                mensaje: sincronizado
+                    ? '¡Datos semilla cargados y sincronizados con Supabase!'
+                    : '¡Datos semilla cargados! (3 fincas, 6 mangas y 28 animales)',
               );
             },
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.botonPrincipal,
             ),
             child: const Text('Poblar Demo'),
           ),

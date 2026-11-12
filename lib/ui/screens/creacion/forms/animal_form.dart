@@ -31,6 +31,9 @@ class AnimalForm extends StatefulWidget {
   final VoidCallback? onRequestCreateFinca;
   final ValueChanged<String?>? onRequestCreateLote;
   final ValueChanged<AnimalModel>? onAnimalCreated;
+  final ValueChanged<AnimalModel>? onAnimalUpdated;
+  final AnimalModel? animalAEditar;
+  final AnimalesService? animalesService;
   final TorosDonantesService? torosDonantesService;
 
   const AnimalForm({
@@ -43,6 +46,9 @@ class AnimalForm extends StatefulWidget {
     this.onRequestCreateFinca,
     this.onRequestCreateLote,
     this.onAnimalCreated,
+    this.onAnimalUpdated,
+    this.animalAEditar,
+    this.animalesService,
     this.torosDonantesService,
   });
 
@@ -53,9 +59,10 @@ class AnimalForm extends StatefulWidget {
 class _AnimalFormState extends State<AnimalForm> {
   final _formKey = GlobalKey<FormState>();
   final _lotesService = LotesService();
-  final _animalesService = AnimalesService();
+  late final AnimalesService _animalesService;
   final _storageService = StorageService();
   late final TorosDonantesService _torosDonantesService;
+  List<String> _fotosExistentes = [];
 
   // Identificación y biometría
   final _areteManejoCtrl = TextEditingController();
@@ -150,19 +157,109 @@ class _AnimalFormState extends State<AnimalForm> {
   @override
   void initState() {
     super.initState();
+    _animalesService = widget.animalesService ?? AnimalesService();
     _torosDonantesService =
         widget.torosDonantesService ?? TorosDonantesService();
     _cargarTorosDonantes();
-    if (widget.fincas.isNotEmpty) {
+    if (widget.animalAEditar != null) {
+      _cargarDatosAnimalAEditar(widget.animalAEditar!);
+    } else if (widget.fincas.isNotEmpty) {
       _selectedFincaId = widget.fincas.first.id;
       _cargarDatosEnCascada(_selectedFincaId!);
     }
   }
 
+  void _cargarDatosAnimalAEditar(AnimalModel a) {
+    _areteManejoCtrl.text = a.areteManejo;
+    _areteOficialCtrl.text = a.areteOficial ?? '';
+    _nombreAliasCtrl.text = a.nombreAlias ?? '';
+    _pesoActualCtrl.text =
+        a.pesoActual != null ? a.pesoActual!.toString() : '';
+    _sexo = a.sexo;
+    _tipoExplotacion = a.tipoExplotacion;
+    _fechaNacimiento = a.fechaNacimiento;
+    _fechaNacimientoExacta = a.fechaNacimientoExacta;
+    _origen = a.origen;
+    _origenOtroCtrl.text = a.origenOtroDetalle ?? '';
+    _precioCompraCtrl.text =
+        a.precioCompra != null ? a.precioCompra!.toString() : '';
+    _selectedFincaId = a.fincaId;
+    _selectedLoteId = a.loteId;
+    _potreroCtrl.text = a.potreroActual ?? '';
+    _estadoActual = a.estadoActual;
+    _fechaEntrada = a.fechaEntrada;
+    _fechaSalida = a.fechaSalida ?? DateTime.now();
+
+    _hierroUbicacionCtrl.text = a.marcasHierro.ubicacionCuerpo;
+    _hierroOrejasCtrl.text = a.marcasHierro.marcasOrejas;
+    _hierroColorCtrl.text = a.marcasHierro.colorMarcas;
+    _hierroObsCtrl.text = a.marcasHierro.observacionHierro;
+
+    _observacionesCtrl.text = a.observaciones ?? '';
+
+    final composicion = a.composicionCruces
+        .map((e) => Map<String, String>.from(e as Map))
+        .toList();
+    _breedSelection = BreedSelectionResult(
+      esRazaPura: a.esRazaPura,
+      razaPuraNombre: a.razaPuraNombre,
+      composicionCruces: composicion,
+      razaEtiquetaDisplay: a.razaEtiquetaDisplay,
+    );
+
+    _fotosExistentes = List<String>.from(a.fotos);
+
+    final g = a.genealogia;
+    if (g != null) {
+      if (g.donanteId != null) {
+        _padreEsIA = true;
+        _padreEsInterno = false;
+        if (g.donanteSnapshot != null) {
+          _toroDonante = ToroDonanteModel.fromJson(g.donanteSnapshot!);
+        }
+      } else if (g.padreId != null) {
+        _padreEsInterno = true;
+        _padreEsIA = false;
+      } else if (g.padreExternoReferencia != null) {
+        _padreEsInterno = false;
+        _padreEsIA = false;
+        _padreExternoCtrl.text = g.padreExternoReferencia!;
+      }
+      if (g.tipoPruebaPaterna != null) {
+        _tipoPruebaPaterna = g.tipoPruebaPaterna!;
+      }
+
+      if (g.madreId != null) {
+        _madreEsInterna = true;
+      } else if (g.madreExternaReferencia != null) {
+        _madreEsInterna = false;
+        _madreExternaCtrl.text = g.madreExternaReferencia!;
+      }
+      if (g.tipoPruebaMaterna != null) {
+        _tipoPruebaMaterna = g.tipoPruebaMaterna!;
+      }
+    }
+
+    _cargarDatosEnCascada(a.fincaId,
+        preselectLoteId: a.loteId, preselectGenealogia: g);
+  }
+
   Future<void> _cargarTorosDonantes() async {
     try {
       final toros = await _torosDonantesService.obtenerActivos();
-      if (mounted) setState(() => _torosDonantes = toros);
+      if (mounted) {
+        setState(() {
+          _torosDonantes = toros;
+          if (widget.animalAEditar?.genealogia?.donanteId != null) {
+            final donId = widget.animalAEditar!.genealogia!.donanteId!;
+            _toroDonante = toros.where((t) => t.id == donId).firstOrNull ??
+                (widget.animalAEditar!.genealogia!.donanteSnapshot != null
+                    ? ToroDonanteModel.fromJson(
+                        widget.animalAEditar!.genealogia!.donanteSnapshot!)
+                    : null);
+          }
+        });
+      }
     } catch (_) {}
   }
 
@@ -272,6 +369,7 @@ class _AnimalFormState extends State<AnimalForm> {
   Future<void> _cargarDatosEnCascada(
     String fincaId, {
     String? preselectLoteId,
+    GenealogiaModel? preselectGenealogia,
   }) async {
     setState(() => _loadingCascada = true);
     try {
@@ -293,6 +391,19 @@ class _AnimalFormState extends State<AnimalForm> {
         } else if (_selectedLoteId != null &&
             !lotes.any((l) => l.id == _selectedLoteId)) {
           _selectedLoteId = null;
+        }
+
+        if (preselectGenealogia != null) {
+          if (preselectGenealogia.padreId != null) {
+            _padreSeleccionado = animales
+                .where((a) => a.id == preselectGenealogia.padreId)
+                .firstOrNull;
+          }
+          if (preselectGenealogia.madreId != null) {
+            _madreSeleccionada = animales
+                .where((a) => a.id == preselectGenealogia.madreId)
+                .firstOrNull;
+          }
         }
       });
     } catch (e) {
@@ -444,7 +555,7 @@ class _AnimalFormState extends State<AnimalForm> {
     });
 
     try {
-      final animalId = const Uuid().v4();
+      final animalId = widget.animalAEditar?.id ?? const Uuid().v4();
       List<String> urlsFotos = [];
 
       if (_fotos.isNotEmpty) {
@@ -595,6 +706,61 @@ class _AnimalFormState extends State<AnimalForm> {
         tipoPruebaMaterna: _tipoPruebaMaterna,
       );
 
+      if (widget.animalAEditar != null) {
+        final a = widget.animalAEditar!;
+        final actualizado = AnimalModel(
+          id: a.id,
+          codigoSistema: a.codigoSistema,
+          areteManejo: _areteManejoCtrl.text.trim(),
+          areteOficial: _areteOficialCtrl.text.trim().isNotEmpty
+              ? _areteOficialCtrl.text.trim()
+              : null,
+          nombreAlias: _nombreAliasCtrl.text.trim().isNotEmpty
+              ? _nombreAliasCtrl.text.trim()
+              : _areteManejoCtrl.text.trim(),
+          sexo: _sexo,
+          pesoActual: pesoActual,
+          esRazaPura: _breedSelection.esRazaPura,
+          razaPuraNombre: _breedSelection.razaPuraNombre,
+          composicionCruces: _breedSelection.composicionCruces,
+          razaEtiquetaDisplay: _breedSelection.razaEtiquetaDisplay,
+          tipoExplotacion: _tipoExplotacion,
+          fechaNacimiento: _fechaNacimiento,
+          fechaNacimientoExacta: _fechaNacimientoExacta,
+          origen: _origen,
+          origenOtroDetalle: _origen == 'Otro'
+              ? _origenOtroCtrl.text.trim()
+              : null,
+          fincaId: _selectedFincaId!,
+          potreroActual: ubicacionAjustada.potreroActual,
+          loteId: ubicacionAjustada.loteId,
+          estadoActual: _estadoActual,
+          fechaEntrada: _fechaEntrada,
+          precioCompra: precioCompra,
+          fechaSalida: ubicacionAjustada.fechaSalida,
+          marcasHierro: marcasHierro,
+          observaciones: obsFinal.isNotEmpty ? obsFinal : null,
+          fotos: [..._fotosExistentes, ...urlsFotos],
+          createdAt: a.createdAt,
+          updatedAt: DateTime.now(),
+          numeroPartos: a.numeroPartos,
+          genealogia: genealogia,
+        );
+
+        final guardado = await _animalesService.actualizar(actualizado);
+
+        if (!mounted) return;
+        AppFeedback.mostrarExito(
+          context: context,
+          mensaje:
+              'Expediente del animal ${guardado.areteManejo} modificado con éxito.',
+        );
+
+        widget.onAnimalUpdated?.call(guardado);
+        Navigator.of(context).pop(guardado);
+        return;
+      }
+
       final registrado = await _animalesService.registrar(
         animal,
         genealogia: genealogia,
@@ -633,13 +799,13 @@ class _AnimalFormState extends State<AnimalForm> {
   @override
   Widget build(BuildContext context) {
     final machosValidos = GenealogiaValidator.filtrarCandidatosValidos(
-      animalActualId: null,
+      animalActualId: widget.animalAEditar?.id,
       sexo: 'Macho',
       candidatos: _animalesDeFinca,
       todosLosAnimales: _animalesDeFinca,
     );
     final hembrasValidas = GenealogiaValidator.filtrarCandidatosValidos(
-      animalActualId: null,
+      animalActualId: widget.animalAEditar?.id,
       sexo: 'Hembra',
       candidatos: _animalesDeFinca,
       todosLosAnimales: _animalesDeFinca,
@@ -655,7 +821,9 @@ class _AnimalFormState extends State<AnimalForm> {
 
           // SECCIÓN 1: IDENTIFICACIÓN Y BIOMETRÍA
           _FormSectionCard(
-            title: '1. Identificación y Biometría',
+            title: widget.animalAEditar != null
+                ? '1. Identificación y Biometría · ${widget.animalAEditar!.codigoSistema}'
+                : '1. Identificación y Biometría',
             icon: Icons.badge_outlined,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1151,15 +1319,78 @@ class _AnimalFormState extends State<AnimalForm> {
                   maxLines: 3,
                 ),
                 const SizedBox(height: 16),
+                if (_fotosExistentes.isNotEmpty) ...[
+                  const Text(
+                    'Fotografías Actuales Guardadas',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      for (int i = 0; i < _fotosExistentes.length; i++)
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                _fotosExistentes[i],
+                                width: 96,
+                                height: 96,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Container(
+                                  width: 96,
+                                  height: 96,
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.broken_image, size: 28),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _fotosExistentes.removeAt(i);
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                ],
                 PhotoUploaderWidget(
-                  label: 'Fotografías del Animal (Máx. 3)',
+                  label: _fotosExistentes.isNotEmpty
+                      ? 'Añadir Nuevas Fotografías'
+                      : 'Fotografías del Animal (Máx. 3)',
                   photos: _fotos,
-                  maxPhotos: 3,
+                  maxPhotos: (3 - _fotosExistentes.length).clamp(0, 3),
                   isUploading: _isUploadingPhotos,
                   uploadProgress: _uploadProgress,
                   uploadStatusText: _uploadStatus,
                   onPhotoAdded: (photo) {
-                    if (_fotos.length < 3) {
+                    if (_fotos.length + _fotosExistentes.length < 3) {
                       setState(() => _fotos.add(photo));
                     }
                   },
@@ -1176,9 +1407,20 @@ class _AnimalFormState extends State<AnimalForm> {
                     runSpacing: 10,
                     children: [
                       OutlinedButton.icon(
-                        onPressed: _isSaving ? null : _limpiarFormulario,
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                if (widget.animalAEditar != null) {
+                                  _cargarDatosAnimalAEditar(
+                                      widget.animalAEditar!);
+                                } else {
+                                  _limpiarFormulario();
+                                }
+                              },
                         icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: const Text('Limpiar Expediente'),
+                        label: Text(widget.animalAEditar != null
+                            ? 'Restablecer Valores'
+                            : 'Limpiar Expediente'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textSecondary,
                           side: const BorderSide(color: AppColors.border),
@@ -1202,11 +1444,15 @@ class _AnimalFormState extends State<AnimalForm> {
                             : const Icon(Icons.check_circle_outline, size: 20),
                         label: Text(
                           _isSaving
-                              ? 'Guardando Expediente...'
-                              : 'Guardar Expediente Animal',
+                              ? (widget.animalAEditar != null
+                                  ? 'Guardando Cambios...'
+                                  : 'Guardando Expediente...')
+                              : (widget.animalAEditar != null
+                                  ? 'Guardar Cambios'
+                                  : 'Guardar Expediente Animal'),
                         ),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: AppColors.botonPrincipal,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 26,
                             vertical: 14,
@@ -1225,6 +1471,7 @@ class _AnimalFormState extends State<AnimalForm> {
   }
 
   Widget _buildHeaderBanner() {
+    final esEdicion = widget.animalAEditar != null;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1237,30 +1484,34 @@ class _AnimalFormState extends State<AnimalForm> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
       ),
-      child: const Row(
+      child: Row(
         children: [
           CircleAvatar(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            child: Icon(Icons.pets_outlined),
+            child: Icon(esEdicion ? Icons.edit_note_rounded : Icons.pets_outlined),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Apertura de Expediente Individual Bovino',
-                  style: TextStyle(
+                  esEdicion
+                      ? 'Modificación de Expediente Bovino · Arete ${widget.animalAEditar!.areteManejo}'
+                      : 'Apertura de Expediente Individual Bovino',
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Trazabilidad genética Modo A, asignación en cascada Finca → Manga y registro genealógico completo.',
-                  style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                  esEdicion
+                      ? 'Actualice los datos biométricos, de genealogía, marcas o ubicación del animal ${widget.animalAEditar!.codigoSistema}.'
+                      : 'Trazabilidad genética Modo A, asignación en cascada Finca → Manga y registro genealógico completo.',
+                  style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
                 ),
               ],
             ),

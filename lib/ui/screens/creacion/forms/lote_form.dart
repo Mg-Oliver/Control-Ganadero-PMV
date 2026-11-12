@@ -363,7 +363,7 @@ class _LoteFormState extends State<LoteForm> {
                           _isSaving ? 'Guardando Manga...' : 'Guardar Manga',
                         ),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: AppColors.botonPrincipal,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 14,

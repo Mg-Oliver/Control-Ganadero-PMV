@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/config/supabase_config.dart';
+import '../../../core/services/app_feedback.dart';
+import '../../../data/dev/seed_service.dart';
 import '../../../ui/controllers/inventario_controller.dart';
 import 'configuracion_categorias_screen.dart';
 
@@ -16,6 +18,7 @@ class ConfiguracionScreen extends StatefulWidget {
 class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   bool _verificando = false;
   bool? _conectado;
+  bool _sincronizando = false;
 
   Future<void> _verificarConexion() async {
     setState(() {
@@ -30,6 +33,30 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
       if (mounted) setState(() => _conectado = false);
     } finally {
       if (mounted) setState(() => _verificando = false);
+    }
+  }
+
+  Future<void> _sincronizarDatosPrueba() async {
+    setState(() => _sincronizando = true);
+    if (widget.inventarioController != null) {
+      SeedService.cargarEnControlador(widget.inventarioController!);
+    }
+    final exito = await SeedService.repoblarEnSupabase();
+    if (mounted) {
+      setState(() => _sincronizando = false);
+      if (exito) {
+        AppFeedback.mostrarExito(
+          context: context,
+          mensaje:
+              '¡3 fincas, 6 mangas y 28 animales sincronizados con Supabase!',
+        );
+      } else {
+        AppFeedback.mostrarAdvertenciaZootecnica(
+          context: context,
+          mensaje:
+              'Datos semilla cargados en memoria. Para sincronizar en la nube, configure credenciales válidas en .env.',
+        );
+      }
     }
   }
 
@@ -48,7 +75,9 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           _ConexionCard(
             verificando: _verificando,
             conectado: _conectado,
+            sincronizando: _sincronizando,
             onVerificar: _verificarConexion,
+            onSincronizarSeed: _sincronizarDatosPrueba,
           ),
           const SizedBox(height: 28),
           _SectionHeader(
@@ -108,12 +137,16 @@ class _SectionHeader extends StatelessWidget {
 class _ConexionCard extends StatelessWidget {
   final bool verificando;
   final bool? conectado;
+  final bool sincronizando;
   final VoidCallback onVerificar;
+  final VoidCallback onSincronizarSeed;
 
   const _ConexionCard({
     required this.verificando,
     required this.conectado,
+    required this.sincronizando,
     required this.onVerificar,
+    required this.onSincronizarSeed,
   });
 
   @override
@@ -129,11 +162,11 @@ class _ConexionCard extends StatelessWidget {
     } else if (conectado == true) {
       statusColor = AppColors.success;
       statusIcon = Icons.check_circle_outline_rounded;
-      statusLabel = 'Conectado correctamente';
+      statusLabel = 'Conectado correctamente a Supabase';
     } else if (conectado == false) {
       statusColor = AppColors.error;
       statusIcon = Icons.error_outline_rounded;
-      statusLabel = 'Sin conexión — revise las credenciales';
+      statusLabel = 'Sin conexión — revise las credenciales en .env';
     }
 
     return Container(
@@ -143,35 +176,75 @@ class _ConexionCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(statusIcon, color: statusColor, size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              statusLabel,
-              style: TextStyle(
-                fontSize: 14,
-                color: statusColor,
-                fontWeight: FontWeight.w500,
+          Row(
+            children: [
+              Icon(statusIcon, color: statusColor, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: statusColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: verificando ? null : onVerificar,
+                icon: verificando
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh_rounded, size: 16),
+                label: const Text('Verificar'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          OutlinedButton.icon(
-            onPressed: verificando ? null : onVerificar,
-            icon: verificando
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh_rounded, size: 16),
-            label: const Text('Verificar'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              side: const BorderSide(color: AppColors.primary),
-            ),
+          const SizedBox(height: 14),
+          const Divider(height: 1),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Icon(Icons.dataset_outlined,
+                  size: 20, color: AppColors.textSecondary),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Datos Semilla Zootécnicos (3 fincas, 6 mangas, 28 animales)',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                ),
+              ),
+              const SizedBox(width: 10),
+              FilledButton.icon(
+                onPressed: sincronizando ? null : onSincronizarSeed,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.botonPrincipal,
+                  visualDensity: VisualDensity.compact,
+                ),
+                icon: sincronizando
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.cloud_upload_outlined, size: 16),
+                label: const Text('Poblar y Sincronizar'),
+              ),
+            ],
           ),
         ],
       ),

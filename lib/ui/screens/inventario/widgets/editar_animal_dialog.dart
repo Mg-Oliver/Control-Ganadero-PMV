@@ -288,6 +288,9 @@ class _EditarAnimalDialogState extends State<EditarAnimalDialog> {
         ),
         FilledButton.icon(
           onPressed: _guardando ? null : _guardar,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.botonPrincipal,
+          ),
           icon: _guardando
               ? const SizedBox(
                   width: 14,

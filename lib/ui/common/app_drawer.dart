@@ -13,14 +13,20 @@ class AppDrawer extends StatelessWidget {
 
   static const _destinations = [
     (Icons.dashboard_outlined, Icons.dashboard_rounded, 'Panel de Control'),
-    (Icons.edit_note_outlined, Icons.edit_note_rounded, 'Expediente'),
     (Icons.inventory_2_outlined, Icons.inventory_2_rounded, 'Inventario'),
     (Icons.favorite_border_rounded, Icons.favorite_rounded, 'Ciclo Reproductivo'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
+    return Container(
+      width: 240,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          right: BorderSide(color: AppColors.border, width: 1),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -37,10 +43,7 @@ class AppDrawer extends StatelessWidget {
                     activeIcon: dest.$2,
                     label: dest.$3,
                     selected: selectedIndex == idx,
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      onDestinationSelected(idx);
-                    },
+                    onTap: () => onDestinationSelected(idx),
                   );
                 }),
                 const Divider(indent: 16, endIndent: 16, height: 24),
@@ -48,11 +51,8 @@ class AppDrawer extends StatelessWidget {
                   icon: Icons.settings_outlined,
                   activeIcon: Icons.settings_rounded,
                   label: 'Configuración',
-                  selected: selectedIndex == 4,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    onDestinationSelected(4);
-                  },
+                  selected: selectedIndex == 3,
+                  onTap: () => onDestinationSelected(3),
                 ),
               ],
             ),
@@ -69,23 +69,36 @@ class _DrawerHeader extends StatelessWidget {
     final topPadding = MediaQuery.paddingOf(context).top;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(20, topPadding + 20, 20, 20),
-      color: AppColors.primary,
+      padding: EdgeInsets.fromLTRB(20, topPadding + 16, 20, 18),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,   // Azul cielo
+            AppColors.secondary, // Verde pasto
+          ],
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 1,
+              ),
             ),
             child: const Icon(
               Icons.agriculture_rounded,
               color: Colors.white,
-              size: 28,
+              size: 26,
             ),
           ),
           const SizedBox(height: 12),
@@ -95,11 +108,16 @@ class _DrawerHeader extends StatelessWidget {
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
             ),
           ),
           const Text(
             'Bovino · v1.0.0 MVP',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ],
       ),
@@ -129,7 +147,7 @@ class _DrawerItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Material(
         color: selected
-            ? AppColors.primary.withValues(alpha: 0.1)
+            ? AppColors.primary.withValues(alpha: 0.12)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
@@ -150,7 +168,9 @@ class _DrawerItem extends StatelessWidget {
                       fontWeight: selected
                           ? FontWeight.w700
                           : FontWeight.w500,
-                      color: color,
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -162,3 +182,4 @@ class _DrawerItem extends StatelessWidget {
     );
   }
 }
+

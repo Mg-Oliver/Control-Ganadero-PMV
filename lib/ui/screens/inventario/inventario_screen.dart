@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/columna_tabla.dart';
@@ -421,7 +421,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     icon: const Icon(Icons.pets_rounded, size: 18),
                     label: const Text('+ Animal'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: AppColors.botonPrincipal,
                       visualDensity: VisualDensity.compact,
                     ),
                   ),

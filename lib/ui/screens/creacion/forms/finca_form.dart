@@ -391,7 +391,7 @@ class _FincaFormState extends State<FincaForm> {
                           _isSaving ? 'Guardando Finca...' : 'Guardar Finca',
                         ),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: AppColors.botonPrincipal,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 14,

@@ -48,16 +48,14 @@ class BovinoApp extends StatelessWidget {
 
 // Navigation indices:
 //   0 → Panel de Control (DashboardScreen)
-//   1 → Expediente       (CreacionScreen)
-//   2 → Inventario       (InventarioScreen)
-//   3 → Ciclo Reproductivo (ReproduccionScreen)
-//   4 → Configuración    (ConfiguracionScreen)
+//   1 → Inventario       (InventarioScreen)
+//   2 → Ciclo Reproductivo (ReproduccionScreen)
+//   3 → Configuración    (ConfiguracionScreen)
 //
-// Drawer destination index → main index (1:1 mapping, 0-4).
+// AppDrawer permanent sidebar destination index → main index (0-3).
 
 const List<String> _sectionTitles = [
   'Panel de Control',
-  'Expediente',
   'Inventario',
   'Ciclo Reproductivo',
   'Configuración',
@@ -77,14 +75,17 @@ class MainWorkspaceShell extends StatefulWidget {
 
 class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
   late int _selectedIndex;
-  ModuloCreacionTab _pendingCreacionTab = ModuloCreacionTab.finca;
   final _inventarioController = InventarioController();
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex.clamp(0, 4);
-    _inventarioController.inicializar();
+    _selectedIndex = widget.initialIndex.clamp(0, 3);
+    _inventarioController.inicializar().then((_) {
+      if (_inventarioController.allAnimales.isEmpty) {
+        SeedService.cargarEnControlador(_inventarioController);
+      }
+    });
   }
 
   @override
@@ -94,94 +95,94 @@ class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
   }
 
   void _navigateTo(int index) {
-    setState(() => _selectedIndex = index.clamp(0, 4));
+    setState(() => _selectedIndex = index.clamp(0, 3));
   }
 
-  void _irACrearFinca() {
-    setState(() {
-      _pendingCreacionTab = ModuloCreacionTab.finca;
-      _selectedIndex = 1;
-    });
-  }
-
-  void _irACrearManga() {
-    setState(() {
-      _pendingCreacionTab = ModuloCreacionTab.lote;
-      _selectedIndex = 1;
-    });
+  void _abrirCreacion(ModuloCreacionTab tab) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CreacionScreen(
+          showAppBar: true,
+          initialTab: tab,
+          onFincaCreatedGlobal: _inventarioController.registrarFincaOptimista,
+          onLoteCreatedGlobal: _inventarioController.registrarLoteOptimista,
+          onAnimalCreatedGlobal: _inventarioController.registrarAnimalOptimista,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: AppDrawer(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _navigateTo,
-      ),
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          _sectionTitles[_selectedIndex],
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          if (_selectedIndex == 0)
-            IconButton(
-              tooltip: 'Poblar Datos Semilla (Demo)',
-              icon: const Icon(Icons.dataset_outlined, size: 20),
-              onPressed: () {
-                SeedService.cargarEnControlador(_inventarioController);
-                AppFeedback.mostrarExito(
-                  context: context,
-                  mensaje:
-                      '¡Datos semilla cargados con éxito! (3 fincas, 6 mangas y 28 animales)',
-                );
-              },
-            ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
+      body: Row(
         children: [
-          // 0: Panel de Control
-          DashboardScreen(
-            controller: _inventarioController,
-            onGoToExpediente: () => _navigateTo(1),
-            onGoToInventario: () => _navigateTo(2),
-            onRegistrarAnimal: () {
-              setState(() => _pendingCreacionTab = ModuloCreacionTab.animal);
-              _navigateTo(1);
-            },
+          // Menú lateral izquierdo fijo (sin ícono de hamburguesa)
+          AppDrawer(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: _navigateTo,
           ),
-          // 1: Expediente
-          CreacionScreen(
-            showAppBar: false,
-            initialTab: _pendingCreacionTab,
-            onFincaCreatedGlobal: _inventarioController.registrarFincaOptimista,
-            onLoteCreatedGlobal: _inventarioController.registrarLoteOptimista,
-            onAnimalCreatedGlobal:
-                _inventarioController.registrarAnimalOptimista,
+          // Contenido principal de la aplicación
+          Expanded(
+            child: Scaffold(
+              backgroundColor: AppColors.background,
+              appBar: AppBar(
+                automaticallyImplyLeading: false, // Sin ícono de menú hamburguesa
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                title: Text(
+                  _sectionTitles[_selectedIndex],
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                actions: [
+                  if (_selectedIndex == 0)
+                    IconButton(
+                      tooltip: 'Poblar Datos Semilla (Demo)',
+                      icon: const Icon(Icons.dataset_outlined, size: 20),
+                      onPressed: () async {
+                        SeedService.cargarEnControlador(_inventarioController);
+                        final sincronizado = await SeedService.repoblarEnSupabase();
+                        if (!context.mounted) return;
+                        AppFeedback.mostrarExito(
+                          context: context,
+                          mensaje: sincronizado
+                              ? '¡Datos semilla cargados y sincronizados con Supabase! (3 fincas, 6 mangas y 28 animales)'
+                              : '¡Datos semilla cargados con éxito! (3 fincas, 6 mangas y 28 animales)',
+                        );
+                      },
+                    ),
+                ],
+              ),
+              body: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  // 0: Panel de Control
+                  DashboardScreen(
+                    controller: _inventarioController,
+                    onGoToExpediente: () => _abrirCreacion(ModuloCreacionTab.animal),
+                    onGoToInventario: () => _navigateTo(1),
+                    onRegistrarAnimal: () => _abrirCreacion(ModuloCreacionTab.animal),
+                  ),
+                  // 1: Inventario
+                  InventarioScreen(
+                    externalController: _inventarioController,
+                    onGoToCreacion: () => _abrirCreacion(ModuloCreacionTab.animal),
+                    onGoToCrearFinca: () => _abrirCreacion(ModuloCreacionTab.finca),
+                    onGoToCrearManga: () => _abrirCreacion(ModuloCreacionTab.lote),
+                  ),
+                  // 2: Ciclo Reproductivo
+                  const ReproduccionScreen(),
+                  // 3: Configuración
+                  ConfiguracionScreen(inventarioController: _inventarioController),
+                ],
+              ),
+            ),
           ),
-          // 2: Inventario
-          InventarioScreen(
-            externalController: _inventarioController,
-            onGoToCreacion: () {
-              setState(() => _pendingCreacionTab = ModuloCreacionTab.animal);
-              _navigateTo(1);
-            },
-            onGoToCrearFinca: _irACrearFinca,
-            onGoToCrearManga: _irACrearManga,
-          ),
-          // 3: Ciclo Reproductivo
-          const ReproduccionScreen(),
-          // 4: Configuración
-          ConfiguracionScreen(inventarioController: _inventarioController),
         ],
       ),
     );

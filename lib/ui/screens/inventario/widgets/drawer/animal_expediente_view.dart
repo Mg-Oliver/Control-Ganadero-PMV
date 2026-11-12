@@ -5,6 +5,7 @@ import '../../../../../data/models/animal_model.dart';
 import '../../../../../data/models/toro_donante_model.dart';
 import '../../../../common/bovine_avatar_placeholder.dart';
 import '../../../../controllers/inventario_controller.dart';
+import '../../editar_animal_screen.dart';
 import '../cards/animal_card.dart';
 
 class AnimalExpedienteView extends StatelessWidget {
@@ -157,6 +158,23 @@ class AnimalExpedienteView extends StatelessWidget {
                 ],
               ),
             ),
+            IconButton(
+              tooltip: 'Editar animal',
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              color: AppColors.primary,
+              visualDensity: VisualDensity.compact,
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EditarAnimalScreen(
+                      animal: animal,
+                      controller: controller,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(

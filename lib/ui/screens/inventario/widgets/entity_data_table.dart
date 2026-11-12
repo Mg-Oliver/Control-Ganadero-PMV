@@ -6,6 +6,7 @@ import '../../../../data/models/animal_model.dart';
 import '../../../controllers/inventario_controller.dart';
 import 'cards/animal_card.dart';
 import 'editar_animal_dialog.dart';
+import '../editar_animal_screen.dart';
 
 class _ColDef {
   final ColumnaTabla tipo;
@@ -235,11 +236,12 @@ class _EntityDataTableState extends State<EntityDataTable> {
     AnimalModel animal,
     InventarioController c,
   ) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => EditarAnimalDialog(
-        animal: animal,
-        controller: c,
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => EditarAnimalScreen(
+          animal: animal,
+          controller: c,
+        ),
       ),
     );
   }

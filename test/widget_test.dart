@@ -10,43 +10,38 @@ import 'package:bovino_mvp/ui/screens/inventario/inventario_screen.dart';
 
 void main() {
   testWidgets(
-    'Panel de Control es la pantalla inicial y el Drawer navega a todas las secciones',
+    'Panel de Control es la pantalla inicial y el menú lateral fijo navega a todas las secciones sin hamburguesa',
     (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(const BovinoApp());
       await tester.pumpAndSettle();
+
+      // Verifica que no haya ícono de menú de hamburguesa
+      expect(find.byIcon(Icons.menu), findsNothing);
 
       // Verifica que el título del AppBar sea "Panel de Control" por defecto
       expect(find.text('Panel de Control'), findsWidgets);
 
-      // Abre el Drawer y navega a "Expediente"
-      final ScaffoldState scaffold =
-          tester.state(find.byType(Scaffold).first);
-      scaffold.openDrawer();
-      await tester.pumpAndSettle();
+      // Verifica que la pestaña "Expediente" ya NO esté en el menú lateral
+      expect(find.text('Expediente'), findsNothing);
 
-      await tester.tap(find.text('Expediente'));
-      await tester.pumpAndSettle();
+      // Verifica que las opciones del menú fijo estén visibles
+      expect(find.text('Inventario'), findsOneWidget);
+      expect(find.text('Ciclo Reproductivo'), findsOneWidget);
+      expect(find.text('Configuración'), findsOneWidget);
 
-      // Verifica que la pantalla de Expediente muestre los botones de creación
-      expect(find.text('+ Nueva Finca'), findsOneWidget);
-      expect(find.text('+ Nueva Manga'), findsOneWidget);
-      expect(find.text('+ Nuevo Animal'), findsOneWidget);
-      expect(find.text('Expediente'), findsWidgets);
-
-      // Abre el Drawer y navega a "Inventario"
-      scaffold.openDrawer();
-      await tester.pumpAndSettle();
-
+      // Navega directamente a "Inventario" desde el menú lateral fijo
       await tester.tap(find.text('Inventario'));
       await tester.pumpAndSettle();
 
       expect(find.text('Catálogo General Bovino'), findsOneWidget);
       expect(find.text('Inventario'), findsWidgets);
 
-      // Abre el Drawer y navega a "Ciclo Reproductivo"
-      scaffold.openDrawer();
-      await tester.pumpAndSettle();
-
+      // Navega a "Ciclo Reproductivo"
       await tester.tap(find.text('Ciclo Reproductivo'));
       await tester.pumpAndSettle();
 
@@ -56,10 +51,7 @@ void main() {
       );
       expect(find.text('Ciclo Reproductivo'), findsWidgets);
 
-      // Abre el Drawer y navega a "Configuración"
-      scaffold.openDrawer();
-      await tester.pumpAndSettle();
-
+      // Navega a "Configuración"
       await tester.tap(find.text('Configuración'));
       await tester.pumpAndSettle();
 
@@ -67,14 +59,21 @@ void main() {
       expect(find.text('Configuración'), findsWidgets);
 
       // Regresa al Panel de Control
-      scaffold.openDrawer();
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Panel de Control'));
+      await tester.tap(find.text('Panel de Control').first);
       await tester.pumpAndSettle();
 
       expect(find.text('Resumen del Hato'), findsOneWidget);
       expect(find.text('Accesos Rápidos'), findsOneWidget);
+
+      // Verifica que el botón principal de registrar animal abra la pantalla de creación
+      await tester.tap(find.widgetWithText(FilledButton, 'Registrar Animal'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Control Ganadero Bovino • Registro y Altas'),
+        findsOneWidget,
+      );
+      expect(find.text('+ Nuevo Animal'), findsOneWidget);
     },
   );
 
