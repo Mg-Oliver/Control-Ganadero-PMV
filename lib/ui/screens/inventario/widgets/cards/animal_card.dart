@@ -3,18 +3,15 @@ import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/utils/formatters.dart';
 import '../../../../../data/models/animal_model.dart';
 import '../../../../common/bovine_avatar_placeholder.dart';
-import 'animal_genealogia_tree.dart';
 
 class AnimalCard extends StatelessWidget {
   final AnimalModel animal;
-  final AnimalModel? Function(String?)? buscarAnimal;
   final bool isSelected;
   final VoidCallback onTap;
 
   const AnimalCard({
     super.key,
     required this.animal,
-    this.buscarAnimal,
     this.isSelected = false,
     required this.onTap,
   });
@@ -225,8 +222,6 @@ class AnimalCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const Divider(height: 24),
-              AnimalGenealogiaTree(animal: animal, buscarAnimal: buscarAnimal),
             ],
           ),
         ),

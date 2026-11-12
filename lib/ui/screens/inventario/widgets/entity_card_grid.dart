@@ -83,7 +83,6 @@ class _EntityCardGridState extends State<EntityCardGrid> {
   }
 
   List<Widget> _construirTarjetasActivas(InventarioController c) {
-    final porId = {for (final a in c.allAnimales) a.id: a};
     switch (c.seccionActiva) {
       case InventarioSeccion.fincas:
         return c.fincasFiltradas.map((finca) {
@@ -111,7 +110,6 @@ class _EntityCardGridState extends State<EntityCardGrid> {
         return c.animalesFiltrados.map((animal) {
           return AnimalCard(
             animal: animal,
-            buscarAnimal: (id) => porId[id],
             isSelected: c.selectedAnimal?.id == animal.id,
             onTap: () => c.seleccionarAnimal(animal),
           );

@@ -113,27 +113,14 @@ class AnimalGenealogiaTree extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Row(
-          children: [
-            Icon(
-              Icons.account_tree_outlined,
-              size: 16,
-              color: AppColors.primary,
-            ),
-            SizedBox(width: 6),
-            Text(
-              'Árbol genealógico',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
         _nodo('Animal', _nombre(animal), principal: true),
         _linea(),
-        Center(child: FractionallySizedBox(
-          widthFactor: .5,
-          child: Container(height: 1, color: AppColors.border),
-        )),
+        Center(
+          child: FractionallySizedBox(
+            widthFactor: .5,
+            child: Container(height: 1, color: AppColors.border),
+          ),
+        ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bovino_mvp/data/models/animal_model.dart';
 import 'package:bovino_mvp/data/models/genealogia_model.dart';
+import 'package:bovino_mvp/ui/screens/inventario/widgets/cards/animal_genealogia_tree.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bovino_mvp/ui/controllers/inventario_controller.dart';
+import 'package:bovino_mvp/ui/screens/inventario/inventario_screen.dart';
 import 'package:bovino_mvp/ui/screens/inventario/widgets/cards/animal_card.dart';
 import '../helpers/test_theme.dart';
 
@@ -36,10 +40,9 @@ Future<void> mostrar(
           child: Center(
             child: SizedBox(
               width: 300,
-              child: AnimalCard(
+              child: AnimalGenealogiaTree(
                 animal: hijo,
                 buscarAnimal: (id) => catalogo[id],
-                onTap: () {},
               ),
             ),
           ),
@@ -51,6 +54,37 @@ Future<void> mostrar(
 }
 
 void main() {
+  testWidgets('árbol aparece solo al abrir la ficha del animal', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final controller = InventarioController();
+    addTearDown(controller.dispose);
+    controller.registrarAnimalOptimista(animal('Hijo'));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: testTheme,
+        home: InventarioScreen(externalController: controller),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(AnimalCard), findsOneWidget);
+    expect(find.byType(AnimalGenealogiaTree), findsNothing);
+    await tester.tap(find.byType(AnimalCard));
+    await tester.pumpAndSettle();
+    expect(find.byType(AnimalGenealogiaTree), findsOneWidget);
+    expect(find.text('Abuelo paterno'), findsOneWidget);
+    expect(find.text('Abuela materna'), findsOneWidget);
+    controller.cerrarDrawer();
+    await tester.pumpAndSettle();
+    expect(find.byType(AnimalGenealogiaTree), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'muestra padres y cuatro abuelos incluso externos sin desbordarse',
     (tester) async {

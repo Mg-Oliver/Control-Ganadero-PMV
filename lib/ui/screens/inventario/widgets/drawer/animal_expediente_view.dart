@@ -7,6 +7,7 @@ import '../../../../common/bovine_avatar_placeholder.dart';
 import '../../../../controllers/inventario_controller.dart';
 import '../../editar_animal_screen.dart';
 import '../cards/animal_card.dart';
+import '../cards/animal_genealogia_tree.dart';
 
 class AnimalExpedienteView extends StatelessWidget {
   final AnimalModel animal;
@@ -363,9 +364,14 @@ class AnimalExpedienteView extends StatelessWidget {
 
         // 8. ÁRBOL GENEALÓGICO INTERACTIVO
         _DetailBlock(
-          title: 'Árbol Genealógico Interactivo',
+          title: 'Árbol Genealógico',
           icon: Icons.account_tree_outlined,
           children: [
+            AnimalGenealogiaTree(
+              animal: animal,
+              buscarAnimal: controller.buscarAnimalPorId,
+            ),
+            const Divider(height: 24),
             _ProgenitorTile(
               rol: 'Padre (Toro / Pajuela)',
               icon: Icons.male_rounded,
