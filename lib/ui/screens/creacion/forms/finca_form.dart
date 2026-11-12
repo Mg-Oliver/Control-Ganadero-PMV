@@ -439,7 +439,7 @@ class _FincaFormState extends State<FincaForm> {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Registra la unidad productiva base para asociar lotes de manejo e inventario animal.',
+                  'Registra la unidad productiva base para asociar mangas de manejo e inventario animal.',
                   style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
                 ),
               ],

@@ -1,3 +1,4 @@
+import '../../core/services/categoria_rules_service.dart';
 import 'genealogia_model.dart';
 
 class MarcasHierro {
@@ -82,6 +83,7 @@ class AnimalModel {
   final List<String> fotos;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final int numeroPartos;
 
   // Campos relacionales opcionales (joins con fincas, lotes y genealogia)
   final String? fincaNombre;
@@ -119,6 +121,7 @@ class AnimalModel {
     this.fotos = const [],
     this.createdAt,
     this.updatedAt,
+    this.numeroPartos = 0,
     this.fincaNombre,
     this.fincaIdentificador,
     this.loteNombre,
@@ -152,6 +155,14 @@ class AnimalModel {
     }
     return '$anios ${anios == 1 ? "año" : "años"}, $meses ${meses == 1 ? "mes" : "meses"}';
   }
+
+  String get categoriaZootecnica =>
+      CategoriaRulesService.instance.determinarCategoria(
+        fechaNacimiento: fechaNacimiento,
+        sexo: sexo,
+        numeroPartos: numeroPartos,
+        tipoExplotacion: tipoExplotacion,
+      );
 
   factory AnimalModel.fromJson(Map<String, dynamic> json) {
     final crucesRaw = json['composicion_cruces'] as List<dynamic>?;
@@ -228,6 +239,7 @@ class AnimalModel {
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'].toString())
           : null,
+      numeroPartos: (json['numero_partos'] as int?) ?? 0,
       fincaNombre: fincaMap?['nombre'] as String?,
       fincaIdentificador: fincaMap?['identificador'] as String?,
       loteNombre: loteMap?['nombre'] as String?,
@@ -265,6 +277,7 @@ class AnimalModel {
       'marcas_hierro': marcasHierro.toJson(),
       'observaciones': observaciones,
       'fotos': fotos,
+      'numero_partos': numeroPartos,
     };
     if (includeId) {
       map['id'] = id;
@@ -304,6 +317,7 @@ class AnimalModel {
     List<String>? fotos,
     DateTime? createdAt,
     DateTime? updatedAt,
+    int? numeroPartos,
     String? fincaNombre,
     String? fincaIdentificador,
     String? loteNombre,
@@ -340,6 +354,7 @@ class AnimalModel {
       fotos: fotos ?? this.fotos,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      numeroPartos: numeroPartos ?? this.numeroPartos,
       fincaNombre: fincaNombre ?? this.fincaNombre,
       fincaIdentificador: fincaIdentificador ?? this.fincaIdentificador,
       loteNombre: loteNombre ?? this.loteNombre,

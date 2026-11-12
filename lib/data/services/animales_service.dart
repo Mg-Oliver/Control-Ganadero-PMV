@@ -167,4 +167,28 @@ class AnimalesService {
 
     return nuevoAnimal;
   }
+
+  Future<AnimalModel> actualizar(AnimalModel animal) async {
+    final json = animal.toJson();
+    // Supabase no acepta columnas de solo lectura en el update
+    json.remove('id');
+    json.remove('codigo_sistema');
+    json.remove('created_at');
+    json.remove('fincas');
+    json.remove('lotes');
+    json.remove('genealogia');
+
+    await _supabase
+        .from('animales')
+        .update(json)
+        .eq('id', animal.id);
+
+    final response = await _supabase
+        .from('animales')
+        .select('*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)')
+        .eq('id', animal.id)
+        .single();
+
+    return AnimalModel.fromJson(response);
+  }
 }

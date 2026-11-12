@@ -10,30 +10,71 @@ import 'package:bovino_mvp/ui/screens/inventario/inventario_screen.dart';
 
 void main() {
   testWidgets(
-    'Navega entre Expediente, Catálogo y Ciclo de Reproducción sin errores',
+    'Panel de Control es la pantalla inicial y el Drawer navega a todas las secciones',
     (WidgetTester tester) async {
       await tester.pumpWidget(const BovinoApp());
       await tester.pumpAndSettle();
 
-      // Verifica Pantalla 1 activa por defecto
-      expect(find.text('+ Nueva Finca'), findsOneWidget);
-      expect(find.text('+ Nuevo Lote'), findsOneWidget);
-      expect(find.text('+ Nuevo Animal'), findsOneWidget);
+      // Verifica que el título del AppBar sea "Panel de Control" por defecto
+      expect(find.text('Panel de Control'), findsWidgets);
 
-      // Cambia a Pantalla 2 (Inventario)
-      await tester.tap(find.text('Catálogo'));
+      // Abre el Drawer y navega a "Expediente"
+      final ScaffoldState scaffold =
+          tester.state(find.byType(Scaffold).first);
+      scaffold.openDrawer();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Expediente'));
+      await tester.pumpAndSettle();
+
+      // Verifica que la pantalla de Expediente muestre los botones de creación
+      expect(find.text('+ Nueva Finca'), findsOneWidget);
+      expect(find.text('+ Nueva Manga'), findsOneWidget);
+      expect(find.text('+ Nuevo Animal'), findsOneWidget);
+      expect(find.text('Expediente'), findsWidgets);
+
+      // Abre el Drawer y navega a "Inventario"
+      scaffold.openDrawer();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Inventario'));
       await tester.pumpAndSettle();
 
       expect(find.text('Catálogo General Bovino'), findsOneWidget);
-      expect(find.text('Tarjetas de Resumen Rápido'), findsOneWidget);
+      expect(find.text('Inventario'), findsWidgets);
 
-      // Cambia a Pestaña 3 (Ciclo de Reproducción, vacía por ahora)
-      await tester.tap(find.text('Ciclo de Reproducción').first);
+      // Abre el Drawer y navega a "Ciclo Reproductivo"
+      scaffold.openDrawer();
       await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Ciclo Reproductivo'));
+      await tester.pumpAndSettle();
+
       expect(
         find.text('Este módulo estará disponible próximamente.'),
         findsOneWidget,
       );
+      expect(find.text('Ciclo Reproductivo'), findsWidgets);
+
+      // Abre el Drawer y navega a "Configuración"
+      scaffold.openDrawer();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Configuración'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Conexión a Supabase'), findsOneWidget);
+      expect(find.text('Configuración'), findsWidgets);
+
+      // Regresa al Panel de Control
+      scaffold.openDrawer();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Panel de Control'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Resumen del Hato'), findsOneWidget);
+      expect(find.text('Accesos Rápidos'), findsOneWidget);
     },
   );
 
@@ -124,6 +165,10 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(
+            useMaterial3: true,
+            splashFactory: InkRipple.splashFactory,
+          ),
           home: InventarioScreen(externalController: controller),
         ),
       );

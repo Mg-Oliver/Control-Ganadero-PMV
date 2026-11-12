@@ -28,3 +28,4 @@ Toda mutación de datos generada sin conexión se añade a una tabla de transacc
 1. **Last Write Wins (LWW) con timestamps UTC:** En caso de discrepancia entre una edición en campo y el servidor, prevalece la versión con `updated_at` más reciente.
 2. **Identificadores UUID generados en el cliente:** Tanto los animales como los lotes y eventos deben nacer con un UUID v4 generado en Flutter, evitando colisiones de ID al sincronizar con Supabase.
 3. **Indicador de Sincronización en la UI:** Mostrar un icono o badge sutil (nube verde sincronizada vs nube naranja con número de registros pendientes de subida) para dar certeza visual al operario.
+

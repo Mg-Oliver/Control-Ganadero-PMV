@@ -304,44 +304,44 @@
 ---
 
 ## Fase 15: Gestión Especializada de Semen y Toros Donantes para Inseminación Artificial (IA)
-- [ ] 15.1 Esquema de base de datos y modelo de dominio de toros donantes:
-  - [ ] 15.1.1 Script SQL de migración (`supabase/migrations/002_toros_donantes.sql`): tabla `toros_donantes` con campos `id (UUID)`, `nombre (TEXT)`, `codigo_pajuela (TEXT)`, `raza (TEXT)`, `genealogia (JSONB: padres y abuelos paternos/maternos con raza, código y nombre)`, `activo (BOOLEAN DEFAULT TRUE)`, timestamps y políticas de seguridad RLS.
-  - [ ] 15.1.2 Modelo Dart `ToroDonanteModel` y modelo `GenealogiaDonanteModel` con serialización y deserialización JSON completa.
-  - [ ] 15.1.3 Servicio `TorosDonantesService` para operaciones CRUD y listado de toros activos en Supabase con soporte offline/memoria.
-- [ ] 15.2 Lógica condicional en el formulario de Registro de Animal (`AnimalForm`):
-  - [ ] 15.2.1 Conmutador / selector de concepción: al marcar "Inseminación Artificial" (IA), ocultar automáticamente el selector de toros vivos del hato y mostrar exclusivamente el selector especializado de "Toros Donantes / Pajuelas".
-  - [ ] 15.2.2 Garantizar que los toros donantes permanezcan aislados y NO aparezcan en el inventario general de animales vivos de la finca.
-- [ ] 15.3 Sub-formulario modal de alta rápida de toro donante:
-  - [ ] 15.3.1 Botón de acción contextual `[+ Registrar nuevo toro donante]` integrado en el selector de pajuelas.
-  - [ ] 15.3.2 Modal interactivo (`RegistrarToroDonanteModal`) para capturar:
+- [x] 15.1 Esquema de base de datos y modelo de dominio de toros donantes:
+  - [x] 15.1.1 Script SQL de migración (`supabase/migrations/002_toros_donantes.sql`): tabla `toros_donantes` con campos `id (UUID)`, `nombre (TEXT)`, `codigo_pajuela (TEXT)`, `raza (TEXT)`, `genealogia (JSONB: padres y abuelos paternos/maternos con raza, código y nombre)`, `activo (BOOLEAN DEFAULT TRUE)`, timestamps y políticas de seguridad RLS.
+  - [x] 15.1.2 Modelo Dart `ToroDonanteModel` y modelo `GenealogiaDonanteModel` con serialización y deserialización JSON completa.
+  - [x] 15.1.3 Servicio `TorosDonantesService` para operaciones CRUD y listado de toros activos en Supabase con soporte offline/memoria.
+- [x] 15.2 Lógica condicional en el formulario de Registro de Animal (`AnimalForm`):
+  - [x] 15.2.1 Conmutador / selector de concepción: al marcar "Inseminación Artificial" (IA), ocultar automáticamente el selector de toros vivos del hato y mostrar exclusivamente el selector especializado de "Toros Donantes / Pajuelas".
+  - [x] 15.2.2 Garantizar que los toros donantes permanezcan aislados y NO aparezcan en el inventario general de animales vivos de la finca.
+- [x] 15.3 Sub-formulario modal de alta rápida de toro donante:
+  - [x] 15.3.1 Botón de acción contextual `[+ Registrar nuevo toro donante]` integrado en el selector de pajuelas.
+  - [x] 15.3.2 Modal interactivo (`RegistrarToroDonanteModal`) para capturar:
     - *Nombre comercial del toro* (ej. *ABS Global Manso 420*).
     - *Código de pajuela* (código de termo o registro genealógico oficial).
     - *Raza del donante* (catálogo de razas).
     - *Genealogía multinivel* en acordeón/sección: Padre, Madre, Abuelo paterno, Abuela paterna, Abuelo materno y Abuela materna (con nombre, código y raza de cada uno).
-  - [ ] 15.3.3 Guardado en `toros_donantes`, cierre del modal y autoasignación inmediata del nuevo donante en el linaje del animal en edición.
-- [ ] 15.4 Integración en el expediente y drawer de linaje:
-  - [ ] 15.4.1 En `AnimalExpedienteView`, si el animal proviene de IA, desplegar badge distintivo *"Inseminación Artificial (IA)"*, código de pajuela y árbol genealógico enriquecido con los ancestros del donante.
-- [ ] 15.5 Pruebas automatizadas y aseguramiento de calidad:
-  - [ ] 15.5.1 Tests de widget e integración (`test/integration/toros_donantes_ia_test.dart`): verificar alternancia condicional de selectores en IA, exclusión de donantes en el inventario vivo, captura de genealogía multinivel y autoasignación al animal.
-  - [ ] 15.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
-  - [ ] 15.5.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
+  - [x] 15.3.3 Guardado en `toros_donantes`, cierre del modal y autoasignación inmediata del nuevo donante en el linaje del animal en edición.
+- [x] 15.4 Integración en el expediente y drawer de linaje:
+  - [x] 15.4.1 En `AnimalExpedienteView`, si el animal proviene de IA, desplegar badge distintivo *"Inseminación Artificial (IA)"*, código de pajuela y árbol genealógico enriquecido con los ancestros del donante.
+- [x] 15.5 Pruebas automatizadas y aseguramiento de calidad:
+  - [x] 15.5.1 Tests de widget e integración (`test/integration/toros_donantes_ia_test.dart`): verificar alternancia condicional de selectores en IA, exclusión de donantes en el inventario vivo, captura de genealogía multinivel y autoasignación al animal.
+  - [x] 15.5.2 Verificación estricta con `flutter analyze` asegurando **0 errores y 0 advertencias**.
+  - [x] 15.5.3 Verificación completa con `flutter test` asegurando que el 100% de las pruebas pasen satisfactoriamente.
 
 ---
 
 ## Fase 16: Cobertura Integral de Pruebas Automatizadas y Blindaje QA contra Regresiones
-- [ ] 16.1 Pruebas unitarias de reglas de categorización y atributos dinámicos (`test/unit/`):
-  - [ ] 16.1.1 Suite de validación zootécnica: probar exhaustivamente categorización con reglas por defecto (Ternera/Novilla/Vaca según edad y partos; Ternero/Novillo/Toro) y reglas personalizadas con umbrales específicos por tipo de explotación (*Cría*, *Ceba*, *Lechería*, *Doble Propósito*).
-  - [ ] 16.1.2 Suite de autocompletado y consistencia de atributos: verificar que cuando el campo `nombre_alias` sea nulo, vacío o contenga solo espacios, se asigne automáticamente el valor de `arete_manejo` al persistir el animal.
-- [ ] 16.2 Pruebas de integración de inventario y aislamiento de toros donantes (`test/integration/`):
-  - [ ] 16.2.1 Blindaje de inventario vivo vs. catálogo de donantes: verificar que los registros de `toros_donantes` permanezcan confinados a su colección especializada y NO se contabilicen ni listen en el inventario general de animales vivos de las fincas.
-  - [ ] 16.2.2 Verificación de trazabilidad por IA: comprobar que las crías con padre donante reflejen correctamente la referencia de pajuela y ancestros en el expediente sin alterar el inventario vivo.
-- [ ] 16.3 Pruebas de métricas y gráficos del Dashboard (`test/integration/`):
-  - [ ] 16.3.1 Validación matemática de los 4 KPI cards: cálculo exacto de Fincas Activas, Total de Animales, Eventos del Día (movimientos registrados en la fecha actual) y Valor Monetario Acumulado del hato con formateo correcto.
-  - [ ] 16.3.2 Validación del gráfico de distribución poblacional: verificar que las cabezas de ganado se agreguen y segmenten con total exactitud según su sexo y categoría zootécnica dinámica.
-- [ ] 16.4 Ejecución de suites, corrección de regresiones y verificación global:
-  - [ ] 16.4.1 Ejecutar `flutter test` sobre toda la suite de pruebas unitarias, de widgets y de integración, corrigiendo cualquier discrepancia o regresión detectada en el código base.
-  - [ ] 16.4.2 Ejecutar `flutter analyze` garantizando **0 errores y 0 advertencias** (`No issues found!`).
-  - [ ] 16.4.3 Confirmación de aprobación del 100% de las pruebas automatizadas.
+- [x] 16.1 Pruebas unitarias de reglas de categorización y atributos dinámicos (`test/unit/`):
+  - [x] 16.1.1 Suite de validación zootécnica: probar exhaustivamente categorización con reglas por defecto (Ternera/Novilla/Vaca según edad y partos; Ternero/Novillo/Toro) y reglas personalizadas con umbrales específicos por tipo de explotación (*Cría*, *Ceba*, *Lechería*, *Doble Propósito*).
+  - [x] 16.1.2 Suite de autocompletado y consistencia de atributos: verificar que cuando el campo `nombre_alias` sea nulo, vacío o contenga solo espacios, se asigne automáticamente el valor de `arete_manejo` al persistir el animal.
+- [x] 16.2 Pruebas de integración de inventario y aislamiento de toros donantes (`test/integration/`):
+  - [x] 16.2.1 Blindaje de inventario vivo vs. catálogo de donantes: verificar que los registros de `toros_donantes` permanezcan confinados a su colección especializada y NO se contabilicen ni listen en el inventario general de animales vivos de las fincas.
+  - [x] 16.2.2 Verificación de trazabilidad por IA: comprobar que las crías con padre donante reflejen correctamente la referencia de pajuela y ancestros en el expediente sin alterar el inventario vivo.
+- [x] 16.3 Pruebas de métricas y gráficos del Dashboard (`test/integration/`):
+  - [x] 16.3.1 Validación matemática de los 4 KPI cards: cálculo exacto de Fincas Activas, Total de Animales, Eventos del Día (movimientos registrados en la fecha actual) y Valor Monetario Acumulado del hato con formateo correcto.
+  - [x] 16.3.2 Validación del gráfico de distribución poblacional: verificar que las cabezas de ganado se agreguen y segmenten con total exactitud según su sexo y categoría zootécnica dinámica.
+- [x] 16.4 Ejecución de suites, corrección de regresiones y verificación global:
+  - [x] 16.4.1 Ejecutar `flutter test` sobre toda la suite de pruebas unitarias, de widgets y de integración, corrigiendo cualquier discrepancia o regresión detectada en el código base.
+  - [x] 16.4.2 Ejecutar `flutter analyze` garantizando **0 errores y 0 advertencias** (`No issues found!`).
+  - [x] 16.4.3 Confirmación de aprobación del 100% de las pruebas automatizadas.
 
 
 

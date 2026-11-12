@@ -5,6 +5,7 @@ import 'package:bovino_mvp/data/models/finca_model.dart';
 import 'package:bovino_mvp/data/models/genealogia_model.dart';
 import 'package:bovino_mvp/ui/controllers/inventario_controller.dart';
 import 'package:bovino_mvp/ui/screens/inventario/inventario_screen.dart';
+import '../helpers/test_theme.dart';
 
 void main() {
   testWidgets(
@@ -70,6 +71,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: testTheme,
           home: InventarioScreen(externalController: controller),
         ),
       );

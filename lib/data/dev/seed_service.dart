@@ -67,7 +67,7 @@ class SeedService {
         id: loteCriaTernerasId,
         fincaId: fincaRocioId,
         identificador: 'LOT-ROC-CRIA',
-        nombre: 'Lote Cría Terneras Girolando',
+        nombre: 'Manga Cría Terneras Girolando',
         propositoProductivo: 'Cria',
         metaGananciaPesoDiaria: 0.850,
         dietaAsignada:
@@ -80,7 +80,7 @@ class SeedService {
         id: loteLecheriaPardoId,
         fincaId: fincaRocioId,
         identificador: 'LOT-ROC-LECH',
-        nombre: 'Lote Lechería Especializada Pardo Suizo',
+        nombre: 'Manga Lechería Especializada Pardo Suizo',
         propositoProductivo: 'Lecheria',
         metaGananciaPesoDiaria: 0.900,
         dietaAsignada:
@@ -93,7 +93,7 @@ class SeedService {
         id: loteDoblePropSimbrahId,
         fincaId: fincaSantaMariaId,
         identificador: 'LOT-STM-SIMB',
-        nombre: 'Lote Doble Propósito Simbrah',
+        nombre: 'Manga Doble Propósito Simbrah',
         propositoProductivo: 'Doble Proposito',
         metaGananciaPesoDiaria: 0.950,
         dietaAsignada:
@@ -106,7 +106,7 @@ class SeedService {
         id: loteNovillasVientreId,
         fincaId: fincaSantaMariaId,
         identificador: 'LOT-STM-NOVI',
-        nombre: 'Lote Novillas de Vientre',
+        nombre: 'Manga Novillas de Vientre',
         propositoProductivo: 'Cria',
         metaGananciaPesoDiaria: 0.800,
         dietaAsignada:
@@ -119,7 +119,7 @@ class SeedService {
         id: loteCebaTorosId,
         fincaId: fincaRanchoVerdeId,
         identificador: 'LOT-RVD-CEBA',
-        nombre: 'Lote Ceba Intensiva Toros',
+        nombre: 'Manga Ceba Intensiva Toros',
         propositoProductivo: 'Ceba',
         metaGananciaPesoDiaria: 1.150,
         dietaAsignada:
@@ -132,7 +132,7 @@ class SeedService {
         id: loteReproductoresId,
         fincaId: fincaRanchoVerdeId,
         identificador: 'LOT-RVD-REPR',
-        nombre: 'Lote Reproductores y Donadores',
+        nombre: 'Manga Reproductores y Donadores',
         propositoProductivo: 'Cria',
         metaGananciaPesoDiaria: 0.800,
         dietaAsignada:
@@ -183,7 +183,7 @@ class SeedService {
       ),
       fincaNombre: 'Hacienda El Rocío',
       fincaIdentificador: 'FNC-ROC-01',
-      loteNombre: 'Lote Lechería Especializada Pardo Suizo',
+      loteNombre: 'Manga Lechería Especializada Pardo Suizo',
       loteIdentificador: 'LOT-ROC-LECH',
     );
 
@@ -221,7 +221,7 @@ class SeedService {
       ),
       fincaNombre: 'Rancho Verde',
       fincaIdentificador: 'FNC-RVD-03',
-      loteNombre: 'Lote Reproductores y Donadores',
+      loteNombre: 'Manga Reproductores y Donadores',
       loteIdentificador: 'LOT-RVD-REPR',
     );
 
@@ -252,7 +252,7 @@ class SeedService {
       ),
       fincaNombre: 'Hacienda El Rocío',
       fincaIdentificador: 'FNC-ROC-01',
-      loteNombre: 'Lote Lechería Especializada Pardo Suizo',
+      loteNombre: 'Manga Lechería Especializada Pardo Suizo',
       loteIdentificador: 'LOT-ROC-LECH',
     );
 
@@ -289,7 +289,7 @@ class SeedService {
       ),
       fincaNombre: 'Hacienda El Rocío',
       fincaIdentificador: 'FNC-ROC-01',
-      loteNombre: 'Lote Cría Terneras Girolando',
+      loteNombre: 'Manga Cría Terneras Girolando',
       loteIdentificador: 'LOT-ROC-CRIA',
     );
 
@@ -326,7 +326,7 @@ class SeedService {
       ),
       fincaNombre: 'Finca Santa María',
       fincaIdentificador: 'FNC-STM-02',
-      loteNombre: 'Lote Doble Propósito Simbrah',
+      loteNombre: 'Manga Doble Propósito Simbrah',
       loteIdentificador: 'LOT-STM-SIMB',
     );
 

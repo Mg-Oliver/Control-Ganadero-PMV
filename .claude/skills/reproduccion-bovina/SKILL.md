@@ -80,3 +80,4 @@ stateDiagram-v2
      - `origen = Nacido en la finca`.
 3. **Manejo de Abortos:**
    - Si se registra un aborto, el estado reproductivo vuelve a `Vacía`, se cancelan las alertas de parto y secado, y se registra la observación sanitaria correspondiente.
+

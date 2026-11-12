@@ -1,16 +1,32 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/utils/formatters.dart';
+import '../../../../core/constants/columna_tabla.dart';
+import '../../../../data/models/animal_model.dart';
 import '../../../controllers/inventario_controller.dart';
 import 'cards/animal_card.dart';
+import 'editar_animal_dialog.dart';
+
+class _ColDef {
+  final ColumnaTabla tipo;
+  final DataColumn header;
+  final DataCell Function(AnimalModel, InventarioController) cell;
+
+  const _ColDef({
+    required this.tipo,
+    required this.header,
+    required this.cell,
+  });
+}
 
 class EntityDataTable extends StatefulWidget {
   final InventarioController controller;
+  final Set<ColumnaTabla> columnasAnimalesActivas;
 
   const EntityDataTable({
     super.key,
     required this.controller,
+    this.columnasAnimalesActivas = kColumnasDefault,
   });
 
   @override
@@ -113,7 +129,12 @@ class _EntityDataTableState extends State<EntityDataTable> {
                   constraints: const BoxConstraints(maxHeight: 460),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.vertical,
-                    child: _buildActiveDataTable(c, startIdx, endIdx),
+                    child: _buildActiveDataTable(
+                      c,
+                      startIdx,
+                      endIdx,
+                      context: context,
+                    ),
                   ),
                 ),
               ),
@@ -196,16 +217,31 @@ class _EntityDataTableState extends State<EntityDataTable> {
   Widget _buildActiveDataTable(
     InventarioController c,
     int startIdx,
-    int endIdx,
-  ) {
+    int endIdx, {
+    required BuildContext context,
+  }) {
     switch (c.seccionActiva) {
       case InventarioSeccion.fincas:
         return _buildFincasTable(c, startIdx, endIdx);
       case InventarioSeccion.lotes:
         return _buildLotesTable(c, startIdx, endIdx);
       case InventarioSeccion.animales:
-        return _buildAnimalesTable(c, startIdx, endIdx);
+        return _buildAnimalesTable(c, startIdx, endIdx, context: context);
     }
+  }
+
+  Future<void> _mostrarDialogoEdicion(
+    BuildContext context,
+    AnimalModel animal,
+    InventarioController c,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => EditarAnimalDialog(
+        animal: animal,
+        controller: c,
+      ),
+    );
   }
 
   Widget _buildFincasTable(InventarioController c, int startIdx, int endIdx) {
@@ -240,7 +276,7 @@ class _EntityDataTableState extends State<EntityDataTable> {
           onSort: (i, asc) => c.ordenarPorColumna(i, asc),
         ),
         const DataColumn(label: Text('Fuentes de Agua')),
-        const DataColumn(label: Text('Lotes / Animales')),
+        const DataColumn(label: Text('Mangas / Animales')),
         const DataColumn(label: Text('Observaciones')),
         const DataColumn(label: Text('Fotos')),
       ],
@@ -277,7 +313,7 @@ class _EntityDataTableState extends State<EntityDataTable> {
                 f.fuentesAgua.isEmpty ? 'Ninguna' : f.fuentesAgua.join(', '),
               ),
             ),
-            DataCell(Text('$lotes lotes • $anims cabezas')),
+            DataCell(Text('$lotes mangas • $anims cabezas')),
             DataCell(
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 200),
@@ -310,7 +346,7 @@ class _EntityDataTableState extends State<EntityDataTable> {
           onSort: (i, asc) => c.ordenarPorColumna(i, asc),
         ),
         DataColumn(
-          label: const Text('Nombre Lote'),
+          label: const Text('Nombre Manga'),
           onSort: (i, asc) => c.ordenarPorColumna(i, asc),
         ),
         DataColumn(
@@ -372,133 +408,145 @@ class _EntityDataTableState extends State<EntityDataTable> {
     );
   }
 
-  Widget _buildAnimalesTable(InventarioController c, int startIdx, int endIdx) {
+  List<_ColDef> _buildColDefs(InventarioController c) => [
+        _ColDef(
+          tipo: ColumnaTabla.arete,
+          header: DataColumn(
+            label: const Text('Arete Manejo'),
+            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+          ),
+          cell: (a, _) => DataCell(
+            Text(
+              a.areteManejo,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+        _ColDef(
+          tipo: ColumnaTabla.nombreAlias,
+          header: DataColumn(
+            label: const Text('Nombre / Alias'),
+            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+          ),
+          cell: (a, _) => DataCell(Text(a.nombreAlias ?? '-')),
+        ),
+        _ColDef(
+          tipo: ColumnaTabla.sexo,
+          header: DataColumn(
+            label: const Text('Sexo'),
+            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+          ),
+          cell: (a, _) => DataCell(Text(a.sexo)),
+        ),
+        _ColDef(
+          tipo: ColumnaTabla.categoria,
+          header: const DataColumn(label: Text('Categoría')),
+          cell: (a, _) => DataCell(Text(a.categoriaZootecnica)),
+        ),
+        _ColDef(
+          tipo: ColumnaTabla.raza,
+          header: DataColumn(
+            label: const Text('Raza / Genética'),
+            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+          ),
+          cell: (a, _) => DataCell(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 200),
+              child: Text(
+                a.razaEtiquetaDisplay,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ),
+        _ColDef(
+          tipo: ColumnaTabla.peso,
+          header: DataColumn(
+            label: const Text('Peso (kg)'),
+            numeric: true,
+            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+          ),
+          cell: (a, _) => DataCell(
+            Text(
+              a.pesoActual != null
+                  ? a.pesoActual!.toStringAsFixed(2)
+                  : '-',
+            ),
+          ),
+        ),
+        _ColDef(
+          tipo: ColumnaTabla.manga,
+          header: const DataColumn(label: Text('Manga')),
+          cell: (a, ctrl) =>
+              DataCell(Text(a.loteNombre ?? ctrl.nombreLotePorId(a.loteId))),
+        ),
+        _ColDef(
+          tipo: ColumnaTabla.potrero,
+          header: const DataColumn(label: Text('Potrero')),
+          cell: (a, _) => DataCell(Text(a.potreroActual ?? '-')),
+        ),
+        _ColDef(
+          tipo: ColumnaTabla.finca,
+          header: DataColumn(
+            label: const Text('Finca Actual'),
+            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+          ),
+          cell: (a, ctrl) => DataCell(
+            Text(a.fincaNombre ?? ctrl.nombreFincaPorId(a.fincaId)),
+          ),
+        ),
+        _ColDef(
+          tipo: ColumnaTabla.estado,
+          header: DataColumn(
+            label: const Text('Estado'),
+            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+          ),
+          cell: (a, _) => DataCell(
+            _chipEstadoSimple(
+              a.estadoActual,
+              AnimalCard.colorPorEstado(a.estadoActual),
+            ),
+          ),
+        ),
+      ];
+
+  Widget _buildAnimalesTable(
+    InventarioController c,
+    int startIdx,
+    int endIdx, {
+    required BuildContext context,
+  }) {
     final slice = c.animalesFiltrados.sublist(startIdx, endIdx);
-    final sortIdx = c.sortColumnIndex <= 9 ? c.sortColumnIndex : null;
+    final allDefs = _buildColDefs(c);
+    final activeDefs = allDefs
+        .where((d) => widget.columnasAnimalesActivas.contains(d.tipo))
+        .toList();
 
     return DataTable(
       showCheckboxColumn: false,
       headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAF9)),
-      sortColumnIndex: sortIdx,
       sortAscending: c.sortAscending,
       columns: [
-        DataColumn(
-          label: const Text('Código'),
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        DataColumn(
-          label: const Text('Arete Manejo'),
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        DataColumn(
-          label: const Text('Nombre / Alias'),
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        DataColumn(
-          label: const Text('Sexo'),
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        DataColumn(
-          label: const Text('Raza / Genética'),
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        DataColumn(
-          label: const Text('Peso (kg)'),
-          numeric: true,
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        DataColumn(
-          label: const Text('Finca Actual'),
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        DataColumn(
-          label: const Text('Estado'),
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        DataColumn(
-          label: const Text('Fecha Entrada'),
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        DataColumn(
-          label: const Text('Nacimiento / Edad'),
-          onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-        ),
-        const DataColumn(label: Text('Arete Oficial')),
-        const DataColumn(label: Text('Explotación')),
-        const DataColumn(label: Text('Lote / Potrero')),
-        const DataColumn(label: Text('Origen')),
-        const DataColumn(label: Text('Precio Compra'), numeric: true),
-        const DataColumn(label: Text('Fotos')),
+        ...activeDefs.map((d) => d.header),
+        const DataColumn(label: Text('Acciones')),
       ],
       rows: slice.map((a) {
         final selected = c.selectedAnimal?.id == a.id;
-        final fincaNom = a.fincaNombre ?? c.nombreFincaPorId(a.fincaId);
-        final loteNom = a.loteNombre ?? c.nombreLotePorId(a.loteId);
-        final potrero = (a.potreroActual != null && a.potreroActual!.isNotEmpty)
-            ? ' • ${a.potreroActual}'
-            : '';
-
         return DataRow(
           selected: selected,
           onSelectChanged: (_) => c.seleccionarAnimal(a),
           cells: [
+            ...activeDefs.map((d) => d.cell(a, c)),
             DataCell(
-              Text(
-                a.codigoSistema,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+              IconButton(
+                tooltip: 'Editar animal',
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                color: AppColors.primary,
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _mostrarDialogoEdicion(context, a, c),
               ),
             ),
-            DataCell(
-              Text(
-                a.areteManejo,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            DataCell(Text(a.nombreAlias ?? '-')),
-            DataCell(Text(a.sexo)),
-            DataCell(
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 200),
-                child: Text(
-                  a.razaEtiquetaDisplay,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-            DataCell(
-              Text(
-                a.pesoActual != null ? a.pesoActual!.toStringAsFixed(2) : '-',
-              ),
-            ),
-            DataCell(Text(fincaNom)),
-            DataCell(
-              _chipEstadoSimple(
-                a.estadoActual,
-                AnimalCard.colorPorEstado(a.estadoActual),
-              ),
-            ),
-            DataCell(Text(Formatters.formatearFecha(a.fechaEntrada))),
-            DataCell(
-              Text(
-                '${Formatters.formatearFecha(a.fechaNacimiento)} (${a.edadFormateada})',
-              ),
-            ),
-            DataCell(Text(a.areteOficial ?? '-')),
-            DataCell(Text(a.tipoExplotacion)),
-            DataCell(Text('$loteNom$potrero')),
-            DataCell(Text(a.origen)),
-            DataCell(
-              Text(
-                a.precioCompra != null
-                    ? Formatters.formatearMoneda(a.precioCompra)
-                    : '-',
-              ),
-            ),
-            DataCell(Text('${a.fotos.length}/3')),
           ],
         );
       }).toList(),

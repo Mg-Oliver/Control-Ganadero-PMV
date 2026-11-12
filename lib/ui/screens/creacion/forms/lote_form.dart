@@ -131,7 +131,7 @@ class _LoteFormState extends State<LoteForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Ya existe un lote con el identificador "$identificador" en la finca seleccionada.',
+                'Ya existe una manga con el identificador "$identificador" en la finca seleccionada.',
               ),
               backgroundColor: AppColors.error,
             ),
@@ -162,7 +162,7 @@ class _LoteFormState extends State<LoteForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Lote "${loteCreado.nombre}" (${loteCreado.identificador}) registrado correctamente.',
+            'Manga "${loteCreado.nombre}" (${loteCreado.identificador}) registrada correctamente.',
           ),
           backgroundColor: AppColors.success,
         ),
@@ -174,7 +174,7 @@ class _LoteFormState extends State<LoteForm> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al registrar el lote: $e'),
+            content: Text('Error al registrar la manga: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -208,7 +208,7 @@ class _LoteFormState extends State<LoteForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Configuración del Lote de Manejo',
+                  'Configuración de la Manga',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -221,7 +221,7 @@ class _LoteFormState extends State<LoteForm> {
                   isRequired: true,
                   isLoading: widget.isLoadingFincas,
                   value: _selectedFincaId,
-                  hint: 'Seleccione la finca a la que pertenece el lote',
+                  hint: 'Seleccione la finca a la que pertenece la manga',
                   prefixIcon: const Icon(Icons.landscape_outlined, size: 20),
                   headerTrailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -261,7 +261,7 @@ class _LoteFormState extends State<LoteForm> {
                       )
                       .toList(),
                   validator: (val) => (val == null || val.isEmpty)
-                      ? 'Todo lote debe pertenecer obligatoriamente a una finca'
+                      ? 'Toda manga debe pertenecer obligatoriamente a una finca'
                       : null,
                   onChanged: (val) {
                     setState(() => _selectedFincaId = val);
@@ -360,7 +360,7 @@ class _LoteFormState extends State<LoteForm> {
                               )
                             : const Icon(Icons.save_outlined, size: 19),
                         label: Text(
-                          _isSaving ? 'Guardando Lote...' : 'Guardar Lote',
+                          _isSaving ? 'Guardando Manga...' : 'Guardar Manga',
                         ),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -402,7 +402,7 @@ class _LoteFormState extends State<LoteForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Creación de Lote de Manejo Productivo',
+                  'Creación de Manga de Manejo Productivo',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -437,7 +437,7 @@ class _LoteFormState extends State<LoteForm> {
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
-              'Aún no hay fincas registradas. Crea primero una finca para poder asociar este lote.',
+              'Aún no hay fincas registradas. Crea primero una finca para poder asociar esta manga.',
               style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
             ),
           ),
@@ -453,26 +453,26 @@ class _LoteFormState extends State<LoteForm> {
 
   Widget _buildIdentificadorField() {
     return CustomTextField(
-      label: 'Identificador de Lote',
+      label: 'Identificador de Manga',
       hint: 'Ej. LOT-LECH-01',
       controller: _identificadorCtrl,
       focusNode: _identificadorFocus,
       isRequired: true,
       prefixIcon: const Icon(Icons.qr_code_rounded, size: 20),
       validator: (v) =>
-          Validators.requerido(v, 'Ingrese el identificador del lote'),
+          Validators.requerido(v, 'Ingrese el identificador de la manga'),
     );
   }
 
   Widget _buildNombreField() {
     return CustomTextField(
-      label: 'Nombre del Lote',
-      hint: 'Ej. Lote Alta Producción Ordeño 1',
+      label: 'Nombre de la Manga',
+      hint: 'Ej. Manga Alta Producción Ordeño 1',
       controller: _nombreCtrl,
       focusNode: _nombreFocus,
       isRequired: true,
       prefixIcon: const Icon(Icons.bookmarks_outlined, size: 20),
-      validator: (v) => Validators.requerido(v, 'Ingrese el nombre del lote'),
+      validator: (v) => Validators.requerido(v, 'Ingrese el nombre de la manga'),
     );
   }
 
@@ -510,7 +510,7 @@ class _LoteFormState extends State<LoteForm> {
 
   Widget _buildEstadoDropdown() {
     return CustomFormDropdown<String>(
-      label: 'Estado del Lote',
+      label: 'Estado de la Manga',
       value: _estado,
       isRequired: true,
       prefixIcon: const Icon(Icons.toggle_on_outlined, size: 20),

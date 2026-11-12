@@ -183,13 +183,13 @@ class _EntityCardGridState extends State<EntityCardGrid> {
                 lista.length;
         kpis = [
           (
-            label: 'Lotes Filtrados',
+            label: 'Mangas Filtradas',
             value: '${lista.length}',
             icon: Icons.grid_view_rounded,
             color: AppColors.primary,
           ),
           (
-            label: 'Lotes Activos',
+            label: 'Mangas Activas',
             value: '$activos',
             icon: Icons.check_circle_outline,
             color: AppColors.success,

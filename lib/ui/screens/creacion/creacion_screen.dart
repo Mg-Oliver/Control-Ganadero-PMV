@@ -51,6 +51,14 @@ class _CreacionScreenState extends State<CreacionScreen> {
     _cargarFincas();
   }
 
+  @override
+  void didUpdateWidget(CreacionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab != widget.initialTab) {
+      _cambiarTabManual(widget.initialTab);
+    }
+  }
+
   Future<void> _cargarFincas() async {
     setState(() {
       _loadingFincas = true;
@@ -132,7 +140,7 @@ class _CreacionScreenState extends State<CreacionScreen> {
       case ModuloCreacionTab.finca:
         return 'Finca';
       case ModuloCreacionTab.lote:
-        return 'Lote';
+        return 'Manga';
       case ModuloCreacionTab.animal:
         return 'Expediente Animal';
     }
@@ -211,7 +219,7 @@ class _CreacionScreenState extends State<CreacionScreen> {
                       onTap: () => _cambiarTabManual(ModuloCreacionTab.finca),
                     ),
                     _QuickAccessTabButton(
-                      label: '+ Nuevo Lote',
+                      label: '+ Nueva Manga',
                       icon: Icons.grid_view_rounded,
                       isSelected: _activeTab == ModuloCreacionTab.lote,
                       onTap: () => _cambiarTabManual(ModuloCreacionTab.lote),

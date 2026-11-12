@@ -118,7 +118,7 @@ class LoteExpedienteView extends StatelessWidget {
 
         const SizedBox(height: 16),
         Text(
-          'Animales Asignados al Lote (${animales.length})',
+          'Animales Asignados a la Manga (${animales.length})',
           style: const TextStyle(
             fontSize: 13.5,
             fontWeight: FontWeight.bold,
@@ -128,7 +128,7 @@ class LoteExpedienteView extends StatelessWidget {
         const SizedBox(height: 8),
         if (animales.isEmpty)
           const Text(
-            'Actualmente no hay animales asignados a este lote.',
+            'Actualmente no hay animales asignados a esta manga.',
             style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
           )
         else

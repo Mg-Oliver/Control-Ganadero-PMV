@@ -9,6 +9,9 @@ class GenealogiaModel {
   final String tipoPruebaPaterna; // 'Visual / Monta natural' | 'Inseminacion' | 'ADN' | 'Sin confirmar'
   final String tipoPruebaMaterna;
   final DateTime? createdAt;
+  // Campos para Inseminación Artificial (IA) con toro donante
+  final String? donanteId;
+  final Map<String, dynamic>? donanteSnapshot;
 
   const GenealogiaModel({
     required this.id,
@@ -21,6 +24,8 @@ class GenealogiaModel {
     this.tipoPruebaPaterna = 'Sin confirmar',
     this.tipoPruebaMaterna = 'Sin confirmar',
     this.createdAt,
+    this.donanteId,
+    this.donanteSnapshot,
   });
 
   factory GenealogiaModel.fromJson(Map<String, dynamic> json) {
@@ -39,6 +44,9 @@ class GenealogiaModel {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
+      donanteId: json['toro_donante_id'] as String?,
+      donanteSnapshot:
+          json['toro_donante_snapshot'] as Map<String, dynamic>?,
     );
   }
 
@@ -52,6 +60,8 @@ class GenealogiaModel {
       'rol_familiar_nacimiento': rolFamiliarNacimiento,
       'tipo_prueba_paterna': tipoPruebaPaterna,
       'tipo_prueba_materna': tipoPruebaMaterna,
+      'toro_donante_id': donanteId,
+      'toro_donante_snapshot': donanteSnapshot,
     };
     if (includeId) {
       map['id'] = id;
@@ -70,6 +80,8 @@ class GenealogiaModel {
     String? tipoPruebaPaterna,
     String? tipoPruebaMaterna,
     DateTime? createdAt,
+    String? donanteId,
+    Map<String, dynamic>? donanteSnapshot,
   }) {
     return GenealogiaModel(
       id: id ?? this.id,
@@ -85,7 +97,8 @@ class GenealogiaModel {
       tipoPruebaPaterna: tipoPruebaPaterna ?? this.tipoPruebaPaterna,
       tipoPruebaMaterna: tipoPruebaMaterna ?? this.tipoPruebaMaterna,
       createdAt: createdAt ?? this.createdAt,
+      donanteId: donanteId ?? this.donanteId,
+      donanteSnapshot: donanteSnapshot ?? this.donanteSnapshot,
     );
   }
 }
-

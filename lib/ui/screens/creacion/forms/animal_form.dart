@@ -17,6 +17,10 @@ import '../../../common/breed_cross_builder.dart';
 import '../../../common/custom_form_dropdown.dart';
 import '../../../common/custom_text_field.dart';
 import '../../../common/photo_uploader_widget.dart';
+import 'registrar_progenitor_modal.dart';
+import 'registrar_toro_donante_modal.dart';
+import '../../../../data/models/toro_donante_model.dart';
+import '../../../../data/services/toros_donantes_service.dart';
 
 class AnimalForm extends StatefulWidget {
   final List<FincaModel> fincas;
@@ -27,6 +31,7 @@ class AnimalForm extends StatefulWidget {
   final VoidCallback? onRequestCreateFinca;
   final ValueChanged<String?>? onRequestCreateLote;
   final ValueChanged<AnimalModel>? onAnimalCreated;
+  final TorosDonantesService? torosDonantesService;
 
   const AnimalForm({
     super.key,
@@ -38,6 +43,7 @@ class AnimalForm extends StatefulWidget {
     this.onRequestCreateFinca,
     this.onRequestCreateLote,
     this.onAnimalCreated,
+    this.torosDonantesService,
   });
 
   @override
@@ -49,6 +55,7 @@ class _AnimalFormState extends State<AnimalForm> {
   final _lotesService = LotesService();
   final _animalesService = AnimalesService();
   final _storageService = StorageService();
+  late final TorosDonantesService _torosDonantesService;
 
   // Identificación y biometría
   final _areteManejoCtrl = TextEditingController();
@@ -123,8 +130,11 @@ class _AnimalFormState extends State<AnimalForm> {
 
   // Genealogía Padre y Madre
   bool _padreEsInterno = true;
+  bool _padreEsIA = false;
   AnimalModel? _padreSeleccionado;
   String _tipoPruebaPaterna = 'Sin confirmar';
+  ToroDonanteModel? _toroDonante;
+  List<ToroDonanteModel> _torosDonantes = [];
 
   bool _madreEsInterna = true;
   AnimalModel? _madreSeleccionada;
@@ -140,9 +150,37 @@ class _AnimalFormState extends State<AnimalForm> {
   @override
   void initState() {
     super.initState();
+    _torosDonantesService =
+        widget.torosDonantesService ?? TorosDonantesService();
+    _cargarTorosDonantes();
     if (widget.fincas.isNotEmpty) {
       _selectedFincaId = widget.fincas.first.id;
       _cargarDatosEnCascada(_selectedFincaId!);
+    }
+  }
+
+  Future<void> _cargarTorosDonantes() async {
+    try {
+      final toros = await _torosDonantesService.obtenerActivos();
+      if (mounted) setState(() => _torosDonantes = toros);
+    } catch (_) {}
+  }
+
+  Future<void> _mostrarModalToroDonante() async {
+    final resultado = await RegistrarToroDonanteModal.mostrar(
+      context,
+      torosDonantesService: _torosDonantesService,
+    );
+    if (resultado != null && mounted) {
+      setState(() {
+        _torosDonantes = [resultado, ..._torosDonantes];
+        _toroDonante = resultado;
+      });
+      AppFeedback.mostrarExito(
+        context: context,
+        mensaje:
+            'Toro donante registrado y asignado: ${resultado.nombre} (${resultado.codigoPajuela})',
+      );
     }
   }
 
@@ -323,7 +361,9 @@ class _AnimalFormState extends State<AnimalForm> {
       );
       _breedErrorText = null;
       _padreEsInterno = true;
+      _padreEsIA = false;
       _padreSeleccionado = null;
+      _toroDonante = null;
       _tipoPruebaPaterna = 'Sin confirmar';
       _madreEsInterna = true;
       _madreSeleccionada = null;
@@ -336,6 +376,30 @@ class _AnimalFormState extends State<AnimalForm> {
 
   bool get _esOrigenComprado =>
       _origen == 'Comprado en subasta' || _origen == 'Otro';
+
+  Future<void> _mostrarModalProgenitor({
+    required String sexo,
+    required String tituloRol,
+    required void Function(AnimalModel) onAnimalRegistrado,
+  }) async {
+    if (_selectedFincaId == null) return;
+    final finca = widget.fincas.where((f) => f.id == _selectedFincaId).firstOrNull;
+    final resultado = await RegistrarProgenitorModal.mostrar(
+      context,
+      sexo: sexo,
+      tituloRol: tituloRol,
+      fincaId: _selectedFincaId!,
+      fincaNombre: finca?.nombre ?? '',
+      animalesService: _animalesService,
+    );
+    if (resultado != null && mounted) {
+      onAnimalRegistrado(resultado);
+      AppFeedback.mostrarExito(
+        context: context,
+        mensaje: 'Progenitor registrado y asignado: ${resultado.areteManejo}',
+      );
+    }
+  }
 
   Future<void> _guardarAnimal() async {
     FocusScope.of(context).unfocus();
@@ -486,7 +550,7 @@ class _AnimalFormState extends State<AnimalForm> {
             : null,
         nombreAlias: _nombreAliasCtrl.text.trim().isNotEmpty
             ? _nombreAliasCtrl.text.trim()
-            : null,
+            : _areteManejoCtrl.text.trim(),
         sexo: _sexo,
         pesoActual: pesoActual,
         esRazaPura: _breedSelection.esRazaPura,
@@ -515,12 +579,14 @@ class _AnimalFormState extends State<AnimalForm> {
       final genealogia = GenealogiaModel(
         id: '',
         animalId: animalId,
-        padreId: _padreEsInterno ? _padreSeleccionado?.id : null,
-        padreExternoReferencia: !_padreEsInterno &&
+        padreId: (_padreEsInterno && !_padreEsIA) ? _padreSeleccionado?.id : null,
+        padreExternoReferencia: (!_padreEsInterno && !_padreEsIA) &&
                 _padreExternoCtrl.text.trim().isNotEmpty
             ? _padreExternoCtrl.text.trim()
             : null,
-        tipoPruebaPaterna: _tipoPruebaPaterna,
+        tipoPruebaPaterna: _padreEsIA ? 'Inseminacion' : _tipoPruebaPaterna,
+        donanteId: _padreEsIA ? _toroDonante?.id : null,
+        donanteSnapshot: _padreEsIA ? _toroDonante?.toJson() : null,
         madreId: _madreEsInterna ? _madreSeleccionada?.id : null,
         madreExternaReferencia: !_madreEsInterna &&
                 _madreExternaCtrl.text.trim().isNotEmpty
@@ -601,8 +667,6 @@ class _AnimalFormState extends State<AnimalForm> {
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _buildCodigoSistemaReadOnly()),
-                          const SizedBox(width: 14),
                           Expanded(child: _buildAreteManejoField()),
                           const SizedBox(width: 14),
                           Expanded(child: _buildAreteOficialField()),
@@ -611,8 +675,6 @@ class _AnimalFormState extends State<AnimalForm> {
                     }
                     return Column(
                       children: [
-                        _buildCodigoSistemaReadOnly(),
-                        const SizedBox(height: 12),
                         _buildAreteManejoField(),
                         const SizedBox(height: 12),
                         _buildAreteOficialField(),
@@ -652,9 +714,9 @@ class _AnimalFormState extends State<AnimalForm> {
           ),
           const SizedBox(height: 16),
 
-          // SECCIÓN 2: RAZA Y MANEJO ZOOTÉCNICO (MODO A)
+          // SECCIÓN 2: GENÉTICA Y LINAJE (RAZA, CLASIFICACIÓN Y PROGENITORES FUSIONADOS)
           _FormSectionCard(
-            title: '2. Genética y Clasificación Zootécnica',
+            title: '2. Genética y Linaje',
             icon: Icons.biotech_outlined,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -764,12 +826,114 @@ class _AnimalFormState extends State<AnimalForm> {
                     );
                   },
                 ),
-              ],
-            ),
+              const Divider(height: 28),
+              const Row(
+                children: [
+                  Icon(Icons.account_tree_outlined,
+                      size: 18, color: AppColors.primary),
+                  SizedBox(width: 8),
+                  Text(
+                    'Linaje y Progenitores',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _ParentescoSelectorCard(
+                tituloRol: 'Padre (Reproductor / Toro)',
+                iconoRol: Icons.male_rounded,
+                esInterno: _padreEsInterno,
+                esIA: _padreEsIA,
+                etiquetaToggleExterno: 'Externo / Pajuela',
+                candidatosInternos: machosValidos,
+                animalSeleccionado: _padreSeleccionado,
+                referenciaExternaCtrl: _padreExternoCtrl,
+                referenciaExternaFocus: _padreExternoFocus,
+                hintExterno:
+                    'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
+                tipoPrueba: _tipoPruebaPaterna,
+                fincaSeleccionada: _selectedFincaId != null,
+                toroDonante: _toroDonante,
+                todosDonantes: _torosDonantes,
+                onModoChanged: (interno) {
+                  setState(() => _padreEsInterno = interno);
+                },
+                onModoIAToggled: (esIA) {
+                  setState(() {
+                    _padreEsIA = esIA;
+                    if (esIA) _padreEsInterno = false;
+                  });
+                },
+                onAnimalSelected: (animal) {
+                  setState(() => _padreSeleccionado = animal);
+                },
+                onTipoPruebaChanged: (prueba) {
+                  if (prueba != null) {
+                    setState(() => _tipoPruebaPaterna = prueba);
+                  }
+                },
+                onToroDonante: (toro) {
+                  setState(() => _toroDonante = toro);
+                },
+                onRegistrarNuevo: () => _mostrarModalProgenitor(
+                  sexo: 'Macho',
+                  tituloRol: 'Padre (Reproductor / Toro)',
+                  onAnimalRegistrado: (nuevo) {
+                    setState(() {
+                      _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                      _padreSeleccionado = nuevo;
+                      _padreEsInterno = true;
+                    });
+                  },
+                ),
+                onRegistrarToroNuevo: _mostrarModalToroDonante,
+              ),
+              const SizedBox(height: 16),
+              _ParentescoSelectorCard(
+                tituloRol: 'Madre (Vaca / Donadora)',
+                iconoRol: Icons.female_rounded,
+                esInterno: _madreEsInterna,
+                etiquetaToggleExterno: 'Externa / Donadora',
+                candidatosInternos: hembrasValidas,
+                animalSeleccionado: _madreSeleccionada,
+                referenciaExternaCtrl: _madreExternaCtrl,
+                referenciaExternaFocus: _madreExternaFocus,
+                hintExterno: 'Ej. Donadora Embriones Hacienda El Vergel #405',
+                tipoPrueba: _tipoPruebaMaterna,
+                fincaSeleccionada: _selectedFincaId != null,
+                onModoChanged: (interna) {
+                  setState(() => _madreEsInterna = interna);
+                },
+                onAnimalSelected: (animal) {
+                  setState(() => _madreSeleccionada = animal);
+                },
+                onTipoPruebaChanged: (prueba) {
+                  if (prueba != null) {
+                    setState(() => _tipoPruebaMaterna = prueba);
+                  }
+                },
+                onRegistrarNuevo: () => _mostrarModalProgenitor(
+                  sexo: 'Hembra',
+                  tituloRol: 'Madre (Vaca / Donadora)',
+                  onAnimalRegistrado: (nuevo) {
+                    setState(() {
+                      _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                      _madreSeleccionada = nuevo;
+                      _madreEsInterna = true;
+                    });
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+        ),
+        const SizedBox(height: 16),
 
-          // SECCIÓN 3: UBICACIÓN EN CASCADA (FINCA -> LOTES)
+        // SECCIÓN 3: UBICACIÓN EN CASCADA (FINCA -> LOTES)
           _FormSectionCard(
             title: '3. Ubicación Actual y Manejo Productivo',
             icon: Icons.place_outlined,
@@ -850,7 +1014,7 @@ class _AnimalFormState extends State<AnimalForm> {
                         Expanded(
                           child: Text(
                             'Animal en estado de $_estadoActual: '
-                            'Se inhabilitan potrero y lote físico, y se requiere fecha de salida.',
+                            'Se inhabilitan potrero y manga física, y se requiere fecha de salida.',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -971,71 +1135,9 @@ class _AnimalFormState extends State<AnimalForm> {
           ),
           const SizedBox(height: 16),
 
-          // SECCIÓN 5: GENEALOGÍA / LINAJE (PADRE Y MADRE)
+          // SECCIÓN 5: OBSERVACIONES Y FOTOGRAFÍAS
           _FormSectionCard(
-            title: '5. Genealogía y Linaje Reproductivo',
-            icon: Icons.account_tree_outlined,
-            child: Column(
-              children: [
-                _ParentescoSelectorCard(
-                  tituloRol: 'Padre (Reproductor / Toro)',
-                  iconoRol: Icons.male_rounded,
-                  esInterno: _padreEsInterno,
-                  etiquetaToggleExterno: 'Externo / Pajuela',
-                  candidatosInternos: machosValidos,
-                  animalSeleccionado: _padreSeleccionado,
-                  referenciaExternaCtrl: _padreExternoCtrl,
-                  referenciaExternaFocus: _padreExternoFocus,
-                  hintExterno:
-                      'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
-                  tipoPrueba: _tipoPruebaPaterna,
-                  fincaSeleccionada: _selectedFincaId != null,
-                  onModoChanged: (interno) {
-                    setState(() => _padreEsInterno = interno);
-                  },
-                  onAnimalSelected: (animal) {
-                    setState(() => _padreSeleccionado = animal);
-                  },
-                  onTipoPruebaChanged: (prueba) {
-                    if (prueba != null) {
-                      setState(() => _tipoPruebaPaterna = prueba);
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                _ParentescoSelectorCard(
-                  tituloRol: 'Madre (Vaca / Donadora)',
-                  iconoRol: Icons.female_rounded,
-                  esInterno: _madreEsInterna,
-                  etiquetaToggleExterno: 'Externa / Donadora',
-                  candidatosInternos: hembrasValidas,
-                  animalSeleccionado: _madreSeleccionada,
-                  referenciaExternaCtrl: _madreExternaCtrl,
-                  referenciaExternaFocus: _madreExternaFocus,
-                  hintExterno:
-                      'Ej. Donadora Embriones Hacienda El Vergel #405',
-                  tipoPrueba: _tipoPruebaMaterna,
-                  fincaSeleccionada: _selectedFincaId != null,
-                  onModoChanged: (interna) {
-                    setState(() => _madreEsInterna = interna);
-                  },
-                  onAnimalSelected: (animal) {
-                    setState(() => _madreSeleccionada = animal);
-                  },
-                  onTipoPruebaChanged: (prueba) {
-                    if (prueba != null) {
-                      setState(() => _tipoPruebaMaterna = prueba);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // SECCIÓN 6: OBSERVACIONES Y FOTOGRAFÍAS
-          _FormSectionCard(
-            title: '6. Observaciones y Registro Fotográfico',
+            title: '5. Observaciones y Registro Fotográfico',
             icon: Icons.camera_enhance_outlined,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1157,7 +1259,7 @@ class _AnimalFormState extends State<AnimalForm> {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Trazabilidad genética Modo A, asignación en cascada Finca → Lote y registro genealógico completo.',
+                  'Trazabilidad genética Modo A, asignación en cascada Finca → Manga y registro genealógico completo.',
                   style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
                 ),
               ],
@@ -1165,50 +1267,6 @@ class _AnimalFormState extends State<AnimalForm> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCodigoSistemaReadOnly() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Código Sistema',
-          style: TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.lock_clock_outlined,
-                  size: 18, color: AppColors.textSecondary),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Generado automáticamente (GAN-XXXXXX)',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.textSecondary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -1237,7 +1295,7 @@ class _AnimalFormState extends State<AnimalForm> {
   Widget _buildNombreAliasField() {
     return CustomTextField(
       label: 'Nombre o Alias',
-      hint: 'Ej. Marquesa / Sultán (Opcional)',
+      hint: 'Ej. Marquesa / Sultán (si vacío, se usa el arete de manejo)',
       controller: _nombreAliasCtrl,
       focusNode: _nombreAliasFocus,
       prefixIcon: const Icon(Icons.edit_note_rounded, size: 20),
@@ -1428,7 +1486,7 @@ class _AnimalFormState extends State<AnimalForm> {
 
   Widget _buildLoteCascadeDropdown() {
     return CustomFormDropdown<String>(
-      label: 'Lote de Manejo Actual',
+      label: 'Manga de Manejo Actual',
       value: _selectedLoteId,
       isLoading: _loadingCascada,
       enabled: _selectedFincaId != null && !_esDeBaja,
@@ -1437,14 +1495,14 @@ class _AnimalFormState extends State<AnimalForm> {
           : (_selectedFincaId == null
               ? 'Seleccione primero una finca'
               : (_lotesDeFinca.isEmpty
-                  ? 'Sin lotes activos en esta finca'
-                  : 'Seleccione lote (Opcional)')),
+                  ? 'Sin mangas activas en esta finca'
+                  : 'Seleccione manga (Opcional)')),
       prefixIcon: const Icon(Icons.grid_view_outlined, size: 20),
       headerTrailing: (widget.onRequestCreateLote != null && !_esDeBaja)
           ? TextButton.icon(
               onPressed: () => widget.onRequestCreateLote!(_selectedFincaId),
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('+ Nuevo Lote'),
+              label: const Text('+ Nueva Manga'),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.secondary,
                 visualDensity: VisualDensity.compact,
@@ -1697,6 +1755,7 @@ class _ParentescoSelectorCard extends StatefulWidget {
   final String tituloRol;
   final IconData iconoRol;
   final bool esInterno;
+  final bool esIA;
   final String etiquetaToggleExterno;
   final List<AnimalModel> candidatosInternos;
   final AnimalModel? animalSeleccionado;
@@ -1706,8 +1765,15 @@ class _ParentescoSelectorCard extends StatefulWidget {
   final String tipoPrueba;
   final bool fincaSeleccionada;
   final ValueChanged<bool> onModoChanged;
+  final ValueChanged<bool>? onModoIAToggled;
   final ValueChanged<AnimalModel?> onAnimalSelected;
   final ValueChanged<String?> onTipoPruebaChanged;
+  final VoidCallback? onRegistrarNuevo;
+  // IA fields
+  final ToroDonanteModel? toroDonante;
+  final List<ToroDonanteModel> todosDonantes;
+  final ValueChanged<ToroDonanteModel?>? onToroDonante;
+  final VoidCallback? onRegistrarToroNuevo;
 
   const _ParentescoSelectorCard({
     required this.tituloRol,
@@ -1724,6 +1790,13 @@ class _ParentescoSelectorCard extends StatefulWidget {
     required this.onModoChanged,
     required this.onAnimalSelected,
     required this.onTipoPruebaChanged,
+    this.esIA = false,
+    this.onModoIAToggled,
+    this.onRegistrarNuevo,
+    this.toroDonante,
+    this.todosDonantes = const [],
+    this.onToroDonante,
+    this.onRegistrarToroNuevo,
   });
 
   @override
@@ -1805,34 +1878,110 @@ class _ParentescoSelectorCardState extends State<_ParentescoSelectorCard> {
                   ),
                 ],
               ),
-              SegmentedButton<bool>(
-                segments: [
-                  const ButtonSegment<bool>(
-                    value: true,
-                    label: Text('Animal de la Finca'),
-                  ),
-                  ButtonSegment<bool>(
-                    value: false,
-                    label: Text(widget.etiquetaToggleExterno),
-                  ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (widget.onModoIAToggled != null)
+                    SegmentedButton<String>(
+                      segments: [
+                        const ButtonSegment<String>(
+                          value: 'interno',
+                          label: Text('Hato'),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'externo',
+                          label: Text(widget.etiquetaToggleExterno),
+                        ),
+                        const ButtonSegment<String>(
+                          value: 'ia',
+                          label: Text('IA'),
+                          icon: Icon(Icons.science_outlined, size: 14),
+                        ),
+                      ],
+                      selected: {
+                        widget.esIA
+                            ? 'ia'
+                            : (widget.esInterno ? 'interno' : 'externo')
+                      },
+                      onSelectionChanged: (sel) {
+                        final mode = sel.first;
+                        if (mode == 'ia') {
+                          widget.onModoIAToggled!(true);
+                          widget.onModoChanged(false);
+                        } else {
+                          widget.onModoIAToggled!(false);
+                          widget.onModoChanged(mode == 'interno');
+                        }
+                      },
+                      style: ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor:
+                            WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return AppColors.primary;
+                          }
+                          return Colors.white;
+                        }),
+                        foregroundColor:
+                            WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return Colors.white;
+                          }
+                          return AppColors.textPrimary;
+                        }),
+                      ),
+                    )
+                  else
+                    SegmentedButton<bool>(
+                      segments: [
+                        const ButtonSegment<bool>(
+                          value: true,
+                          label: Text('Animal de la Finca'),
+                        ),
+                        ButtonSegment<bool>(
+                          value: false,
+                          label: Text(widget.etiquetaToggleExterno),
+                        ),
+                      ],
+                      selected: {widget.esInterno},
+                      onSelectionChanged: (sel) => widget.onModoChanged(sel.first),
+                      style: ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor:
+                            WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return AppColors.primary;
+                          }
+                          return Colors.white;
+                        }),
+                        foregroundColor:
+                            WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return Colors.white;
+                          }
+                          return AppColors.textPrimary;
+                        }),
+                      ),
+                    ),
+                  if (widget.onRegistrarNuevo != null &&
+                      widget.fincaSeleccionada &&
+                      !widget.esIA)
+                    OutlinedButton.icon(
+                      onPressed: widget.onRegistrarNuevo,
+                      icon: const Icon(Icons.add_rounded, size: 15),
+                      label: const Text('Registrar'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        textStyle: const TextStyle(fontSize: 12),
+                      ),
+                    ),
                 ],
-                selected: {widget.esInterno},
-                onSelectionChanged: (sel) => widget.onModoChanged(sel.first),
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return AppColors.primary;
-                    }
-                    return Colors.white;
-                  }),
-                  foregroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return Colors.white;
-                    }
-                    return AppColors.textPrimary;
-                  }),
-                ),
               ),
             ],
           ),
@@ -1840,16 +1989,18 @@ class _ParentescoSelectorCardState extends State<_ParentescoSelectorCard> {
           LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth > 620;
-              final selectorPrincipal = widget.esInterno
-                  ? _buildBuscadorInterno()
-                  : CustomTextField(
-                      label: 'Referencia o Código de Catálogo Externo',
-                      hint: widget.hintExterno,
-                      controller: widget.referenciaExternaCtrl,
-                      focusNode: widget.referenciaExternaFocus,
-                      prefixIcon:
-                          const Icon(Icons.science_outlined, size: 19),
-                    );
+              final selectorPrincipal = widget.esIA
+                  ? _buildSelectorIA()
+                  : (widget.esInterno
+                      ? _buildBuscadorInterno()
+                      : CustomTextField(
+                          label: 'Referencia o Código de Catálogo Externo',
+                          hint: widget.hintExterno,
+                          controller: widget.referenciaExternaCtrl,
+                          focusNode: widget.referenciaExternaFocus,
+                          prefixIcon:
+                              const Icon(Icons.science_outlined, size: 19),
+                        ));
 
               final selectorPrueba = CustomFormDropdown<String>(
                 label: 'Tipo de Prueba / Respaldo',
@@ -2051,6 +2202,117 @@ class _ParentescoSelectorCardState extends State<_ParentescoSelectorCard> {
             }).toList(),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildSelectorIA() {
+    if (!widget.fincaSeleccionada) {
+      return const Text(
+        'Seleccione una finca primero para registrar o asignar un toro donante.',
+        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+      );
+    }
+
+    final seleccionado = widget.toroDonante;
+    if (seleccionado != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE3F2FD),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.science_outlined,
+                color: AppColors.primary, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    seleccionado.nombre,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    'Código pajuela: ${seleccionado.codigoPajuela}'
+                    '${seleccionado.raza.isNotEmpty ? " · ${seleccionado.raza}" : ""}',
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Cambiar toro donante',
+              onPressed: () => widget.onToroDonante?.call(null),
+              icon: const Icon(Icons.close, size: 18, color: AppColors.error),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'Toro Donante / Pajuela',
+            hintText: widget.todosDonantes.isEmpty
+                ? 'Sin donantes registrados — use "Registrar" abajo'
+                : 'Seleccionar donante activo',
+            prefixIcon:
+                const Icon(Icons.science_outlined, size: 19, color: AppColors.primary),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            isDense: true,
+          ),
+          child: DropdownButton<String>(
+            value: widget.toroDonante?.id,
+            isExpanded: true,
+            underline: const SizedBox.shrink(),
+            isDense: true,
+            hint: Text(
+              widget.todosDonantes.isEmpty
+                  ? '— Sin donantes registrados —'
+                  : '— Seleccionar —',
+              style: const TextStyle(fontSize: 13),
+            ),
+            items: widget.todosDonantes
+                .map((t) => DropdownMenuItem<String>(
+                      value: t.id,
+                      child: Text(t.etiquetaDisplay,
+                          style: const TextStyle(fontSize: 13)),
+                    ))
+                .toList(),
+            onChanged: (id) {
+              final toro =
+                  widget.todosDonantes.where((t) => t.id == id).firstOrNull;
+              widget.onToroDonante?.call(toro);
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: widget.onRegistrarToroNuevo,
+          icon: const Icon(Icons.add_rounded, size: 15),
+          label: const Text('Registrar nuevo toro donante'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.primary,
+            side: const BorderSide(color: AppColors.primary),
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            textStyle: const TextStyle(fontSize: 12),
+          ),
+        ),
       ],
     );
   }

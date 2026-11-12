@@ -27,3 +27,4 @@ Toda nueva funcionalidad que requiera tablas o columnas debe plasmarse en un nue
 ## 3. Disparadores Automáticos (Triggers)
 - Usar funciones PL/pgSQL para generación secuencial de códigos (`GAN-000001`) o actualización automática de `updated_at`.
 - Para sincronización en tiempo real, habilitar `REPLICA IDENTITY FULL` si se van a consumir Supabase Realtime Streams.
+

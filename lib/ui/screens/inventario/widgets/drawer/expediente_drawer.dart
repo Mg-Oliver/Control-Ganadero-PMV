@@ -17,7 +17,7 @@ class ExpedienteDrawer extends StatelessWidget {
 
   String _tituloDrawer() {
     if (controller.selectedAnimal != null) return 'Expediente Individual Bovino';
-    if (controller.selectedLote != null) return 'Ficha de Lote de Manejo';
+    if (controller.selectedLote != null) return 'Ficha de Manga';
     if (controller.selectedFinca != null) return 'Ficha de Finca / Predio';
     return 'Expediente';
   }

@@ -86,3 +86,4 @@ En `.claude/skills/` se encuentran guías especializadas para las siguientes fas
 - **`supabase-data-sync`:** Mantenimiento de esquemas SQL, disparadores de código automático, políticas RLS y buckets de Storage.
 - **`task-manager`:** Guía detallada para el ciclo autónomo de lectura y actualización de `task.md`.
 - **`offline-first-sync`:** Estrategias de persistencia local y sincronización diferida para zonas rurales sin cobertura.
+

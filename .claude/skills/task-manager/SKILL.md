@@ -30,3 +30,4 @@ flowchart TD
 2. **Edición quirúrgica de `task.md`:** No borres descripciones ni subtareas existentes. Únicamente reemplaza el espacio `[ ]` por una `[x]` en la línea específica concluida.
 3. **Reporte continuo:** Cada vez que se culmine una subtarea, notifica al usuario qué archivo se modificó, qué regla se aplicó y que la prueba técnica fue superada.
 4. **Adición de nuevas fases:** Cuando el usuario solicite una nueva funcionalidad (ej. Fase 5: Reproducción), agrega el bloque estructurado al final de `task.md` con casillas `[ ]` antes de escribir la primera línea de código.
+

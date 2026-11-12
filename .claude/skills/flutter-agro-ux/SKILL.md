@@ -27,3 +27,4 @@ Esta skill establece las directrices de interfaz de usuario para que el software
   2. *Área central:* Resumen en tarjetas compactas + Tabla completa inferior con scroll bidireccional.
   3. *Drawer derecho:* Expediente técnico sin pérdida de contexto (ficha biométrica, galería y árbol genealógico).
 - En pantallas compactas (< 1000px), el Drawer debe abrirse como modal inferior o modal lateral deslizable completo.
+

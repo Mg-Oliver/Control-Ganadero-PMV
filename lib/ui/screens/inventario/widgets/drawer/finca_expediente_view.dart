@@ -144,7 +144,7 @@ class FincaExpedienteView extends StatelessWidget {
         const SizedBox(height: 14),
 
         Text(
-          'Lotes de Manejo (${lotes.length})',
+          'Mangas de Manejo (${lotes.length})',
           style: const TextStyle(
             fontSize: 13.5,
             fontWeight: FontWeight.bold,
@@ -154,7 +154,7 @@ class FincaExpedienteView extends StatelessWidget {
         const SizedBox(height: 8),
         if (lotes.isEmpty)
           const Text(
-            'No hay lotes registrados en esta finca.',
+            'No hay mangas registradas en esta finca.',
             style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
           )
         else

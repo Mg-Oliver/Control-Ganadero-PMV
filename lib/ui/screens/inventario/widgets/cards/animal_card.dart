@@ -160,6 +160,8 @@ class AnimalCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    _CategoriaBadge(categoria: animal.categoriaZootecnica),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
@@ -227,6 +229,51 @@ class AnimalCard extends StatelessWidget {
       tipoExplotacion: animal.tipoExplotacion,
       width: 72,
       height: 72,
+    );
+  }
+}
+
+class _CategoriaBadge extends StatelessWidget {
+  final String categoria;
+
+  const _CategoriaBadge({required this.categoria});
+
+  static Color _colorPorCategoria(String cat) {
+    switch (cat) {
+      case 'Ternero':
+      case 'Ternera':
+        return const Color(0xFF92400E); // ámbar oscuro
+      case 'Novillo':
+      case 'Novilla':
+        return const Color(0xFF0369A1); // azul
+      case 'Toro':
+        return const Color(0xFF7C3AED); // violeta
+      case 'Vaca':
+        return const Color(0xFF047857); // verde esmeralda
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _colorPorCategoria(categoria);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 0.8),
+      ),
+      child: Text(
+        categoria,
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          color: color,
+          letterSpacing: 0.3,
+        ),
+      ),
     );
   }
 }

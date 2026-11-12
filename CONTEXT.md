@@ -5,7 +5,7 @@
 **Despliegue Web (GitHub Pages):** [https://mg-oliver.github.io/Control-Ganadero-PMV/](https://mg-oliver.github.io/Control-Ganadero-PMV/)  
 **Rama principal de código:** `main`  
 **Rama de despliegue web:** `gh-pages`  
-**Estado:** Fase 1 a Fase 4 completadas al 100% (18/18 tests aprobados, `flutter analyze` en 0 errores).
+**Estado:** Fase 1 a Fase 7 completadas al 100% (42/42 tests aprobados, `flutter analyze` en 0 errores y 0 advertencias).
 
 ---
 
@@ -29,20 +29,27 @@ El sistema reemplaza las planillas manuales de campo mediante un flujo ágil de 
 
 ---
 
-## 3. Estructura de Navegación (3 Pestañas Principales)
+## 3. Estructura de Navegación (Menú Drawer Lateral — Fase 5)
 
-La aplicación cuenta con una barra de navegación superior fija (`TabBar`) organizada en 3 módulos:
+La aplicación usa un menú drawer lateral (`AppDrawer`) que reemplaza el `TabBar` previo. El `AppBar` muestra el título dinámico de la sección activa y el ícono hamburguesa. El `IndexedStack` preserva el estado de las 5 pantallas sin destruirlas al cambiar de sección:
 
-1. **Expediente (Creación):**
+1. **Panel de Control (`DashboardScreen`):**
+   - KPIs reactivos (total fincas, lotes, animales activos) via `ListenableBuilder` sobre `InventarioController`.
+   - Accesos rápidos para crear Fincas, Lotes y Animales (navegan a Expediente).
+   - Widget de seed data de demostración.
+2. **Expediente (Creación):**
    - Panel de formularios reactivos para el alta de **Fincas**, **Lotes** y **Animales**.
    - Validación zootécnica en tiempo real, doble aretado, orígenes y marcas de hierro.
-2. **Catálogo (Inventario General):**
+3. **Inventario (Catálogo General):**
    - Espacio de trabajo responsivo de 3 áreas:
      - **Sidebar Izquierdo:** Filtros dinámicos contextuales según la entidad activa (Finca, Lote o Animal), selector de sexo, estado, raza/cruces y buscador predictivo.
      - **Área Central Dual:** Grid superior de tarjetas compactas con KPIs rápidos + Tabla de datos exhaustiva inferior con scroll bidireccional y ordenamiento por columnas.
      - **Drawer Lateral Derecho:** Expediente deslizable en alta resolución con ficha biométrica, marcas de hierro y árbol genealógico interactivo navegable.
-3. **Ciclo de Reproducción:**
+4. **Ciclo de Reproducción:**
    - Módulo preparado estructuralmente (pantalla placeholder reservada para la siguiente etapa de desarrollo).
+5. **Configuración:**
+   - Estado de conexión a Supabase (verificación asíncrona en tiempo real).
+   - Información de versión y opciones generales placeholder.
 
 ---
 
@@ -84,7 +91,7 @@ Para demostraciones y pruebas sin necesidad de cargar datos manuales:
 - **Carga en memoria y script SQL:** [`supabase/seed.sql`](file:///c:/Users/maiky/OneDrive/Documentos/Producto%20minimo%20viable%20%20lecheria/supabase/seed.sql) y [`lib/data/dev/seed_service.dart`](file:///c:/Users/maiky/OneDrive/Documentos/Producto%20minimo%20viable%20%20lecheria/lib/data/dev/seed_service.dart).
 - Incluye:
   - **3 Fincas:** *Hacienda El Rocío*, *Finca Santa María*, *Rancho Verde*.
-  - **6 Lotes:** Ceba intensiva, cría, lechería especializada Pardo Suizo, etc.
+  - **6 Mangas:** Ceba intensiva, cría, lechería especializada Pardo Suizo, etc.
   - **28 Animales reales:** Brahman, Nelore, Holstein, Angus, cruces Simbrah y Girolando, con genealogías entrelazadas y marcas de hierro.
 
 ---
@@ -118,3 +125,4 @@ Para demostraciones y pruebas sin necesidad de cargar datos manuales:
 2. **Historial de Pesajes y Curvas de Ganancia Diaria de Peso (GDP).**
 3. **Modo Offline de campo** con sincronización diferida hacia Supabase.
 4. **Exportación de reportes y fichas técnicas** en PDF y Excel/CSV.
+

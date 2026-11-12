@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/utils/formatters.dart';
 import '../../../../../data/models/animal_model.dart';
+import '../../../../../data/models/toro_donante_model.dart';
 import '../../../../common/bovine_avatar_placeholder.dart';
 import '../../../../controllers/inventario_controller.dart';
 import '../cards/animal_card.dart';
@@ -184,6 +185,7 @@ class AnimalExpedienteView extends StatelessWidget {
             _DataPair('Arete de Manejo', animal.areteManejo),
             _DataPair('Arete Oficial / RFID', animal.areteOficial ?? 'No registrado'),
             _DataPair('Sexo', animal.sexo),
+            _DataPair('Categoría Zootécnica', animal.categoriaZootecnica),
             _DataPair(
               'Peso Actual',
               animal.pesoActual != null
@@ -269,7 +271,7 @@ class AnimalExpedienteView extends StatelessWidget {
           icon: Icons.place_outlined,
           children: [
             _DataPair('Finca Asignada', fincaNom),
-            _DataPair('Lote de Manejo', loteNom),
+            _DataPair('Manga de Manejo', loteNom),
             _DataPair('Potrero Actual', animal.potreroActual ?? 'Sin asignar'),
             _DataPair('Tipo Explotación', animal.tipoExplotacion),
           ],
@@ -354,6 +356,9 @@ class AnimalExpedienteView extends StatelessWidget {
               progenitorInterno: padreInterno,
               referenciaExterna: gen?.padreExternoReferencia,
               tipoPrueba: gen?.tipoPruebaPaterna ?? 'Sin confirmar',
+              toroDonante: gen?.donanteSnapshot != null
+                  ? ToroDonanteModel.fromJson(gen!.donanteSnapshot!)
+                  : null,
               onTapInterno: padreInterno != null
                   ? () => controller.navegarAProgenitor(padreInterno.id)
                   : null,
@@ -582,6 +587,7 @@ class _ProgenitorTile extends StatelessWidget {
   final String? referenciaExterna;
   final String tipoPrueba;
   final VoidCallback? onTapInterno;
+  final ToroDonanteModel? toroDonante;
 
   const _ProgenitorTile({
     required this.rol,
@@ -590,6 +596,7 @@ class _ProgenitorTile extends StatelessWidget {
     this.referenciaExterna,
     required this.tipoPrueba,
     this.onTapInterno,
+    this.toroDonante,
   });
 
   @override
@@ -597,6 +604,7 @@ class _ProgenitorTile extends StatelessWidget {
     final tieneInterno = progenitorInterno != null;
     final tieneExterno =
         referenciaExterna != null && referenciaExterna!.trim().isNotEmpty;
+    final esIA = toroDonante != null || tipoPrueba == 'Inseminacion';
 
     return Material(
       color: Colors.white,
@@ -630,6 +638,34 @@ class _ProgenitorTile extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (esIA)
+                    Container(
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.4)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.science_outlined,
+                              size: 11, color: AppColors.primary),
+                          SizedBox(width: 3),
+                          Text(
+                            'IA',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 7,
@@ -651,7 +687,31 @@ class _ProgenitorTile extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              if (tieneInterno)
+              if (toroDonante != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      toroDonante!.nombre,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    Text(
+                      'Pajuela: ${toroDonante!.codigoPajuela}'
+                      '${toroDonante!.raza.isNotEmpty ? " · ${toroDonante!.raza}" : ""}',
+                      style: const TextStyle(
+                          fontSize: 11.5, color: AppColors.textSecondary),
+                    ),
+                    if (toroDonante!.genealogia.tieneDatos) ...[
+                      const SizedBox(height: 4),
+                      _AncestrosIA(genealogia: toroDonante!.genealogia),
+                    ],
+                  ],
+                )
+              else if (tieneInterno)
                 Row(
                   children: [
                     Expanded(
@@ -705,6 +765,54 @@ class _ProgenitorTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// Widget compacto para mostrar los ancestros del toro donante en el expediente
+
+class _AncestrosIA extends StatelessWidget {
+  final GenealogiaDonanteModel genealogia;
+
+  const _AncestrosIA({required this.genealogia});
+
+  @override
+  Widget build(BuildContext context) {
+    final ancestros = <(String, AncestroDonanteModel)>[
+      if (genealogia.padre.tieneDatos) ('Padre', genealogia.padre),
+      if (genealogia.madre.tieneDatos) ('Madre', genealogia.madre),
+      if (genealogia.abueloPaterno.tieneDatos)
+        ('Ab. Paterno', genealogia.abueloPaterno),
+      if (genealogia.abuelaPaterna.tieneDatos)
+        ('Ab. Paterna', genealogia.abuelaPaterna),
+      if (genealogia.abueloMaterno.tieneDatos)
+        ('Ab. Materno', genealogia.abueloMaterno),
+      if (genealogia.abuelaMaterna.tieneDatos)
+        ('Ab. Materna', genealogia.abuelaMaterna),
+    ];
+
+    if (ancestros.isEmpty) return const SizedBox.shrink();
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: ancestros.map((entry) {
+        final (label, anc) = entry;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F9FF),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xFFBAE6FD)),
+          ),
+          child: Text(
+            '$label: ${anc.nombre}'
+            '${anc.codigo.isNotEmpty ? " (${anc.codigo})" : ""}',
+            style: const TextStyle(
+                fontSize: 10.5, color: Color(0xFF0369A1)),
+          ),
+        );
+      }).toList(),
     );
   }
 }

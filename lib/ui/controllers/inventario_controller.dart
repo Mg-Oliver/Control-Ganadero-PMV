@@ -248,6 +248,59 @@ class InventarioController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void actualizarAnimalOptimista(AnimalModel animal) {
+    final finca = _allFincas.where((f) => f.id == animal.fincaId).firstOrNull;
+    final lote = animal.loteId != null
+        ? _allLotes.where((l) => l.id == animal.loteId).firstOrNull
+        : null;
+
+    final enriquecido = AnimalModel(
+      id: animal.id,
+      codigoSistema: animal.codigoSistema,
+      areteManejo: animal.areteManejo,
+      areteOficial: animal.areteOficial,
+      nombreAlias: animal.nombreAlias,
+      sexo: animal.sexo,
+      pesoActual: animal.pesoActual,
+      esRazaPura: animal.esRazaPura,
+      razaPuraNombre: animal.razaPuraNombre,
+      composicionCruces: animal.composicionCruces,
+      razaEtiquetaDisplay: animal.razaEtiquetaDisplay,
+      tipoExplotacion: animal.tipoExplotacion,
+      fechaNacimiento: animal.fechaNacimiento,
+      fechaNacimientoExacta: animal.fechaNacimientoExacta,
+      origen: animal.origen,
+      origenOtroDetalle: animal.origenOtroDetalle,
+      fincaId: animal.fincaId,
+      potreroActual: animal.potreroActual,
+      loteId: animal.loteId,
+      estadoActual: animal.estadoActual,
+      fechaEntrada: animal.fechaEntrada,
+      precioCompra: animal.precioCompra,
+      fechaSalida: animal.fechaSalida,
+      marcasHierro: animal.marcasHierro,
+      observaciones: animal.observaciones,
+      fotos: animal.fotos,
+      createdAt: animal.createdAt,
+      updatedAt: animal.updatedAt,
+      numeroPartos: animal.numeroPartos,
+      fincaNombre: animal.fincaNombre ?? finca?.nombre,
+      fincaIdentificador: animal.fincaIdentificador ?? finca?.identificador,
+      loteNombre: lote?.nombre,
+      loteIdentificador: lote?.identificador,
+      genealogia: animal.genealogia,
+    );
+
+    final existe = _allAnimales.any((a) => a.id == animal.id);
+    if (existe) {
+      _allAnimales =
+          _allAnimales.map((a) => a.id == animal.id ? enriquecido : a).toList();
+    } else {
+      _allAnimales = [enriquecido, ..._allAnimales];
+    }
+    notifyListeners();
+  }
+
   // --- Cambio de sección y búsqueda ---
   void cambiarSeccion(InventarioSeccion nueva) {
     if (_seccionActiva == nueva) return;
@@ -690,15 +743,19 @@ class InventarioController extends ChangeNotifier {
   }
 
   String nombreLotePorId(String? loteId) {
-    if (loteId == null || loteId.isEmpty) return 'Sin lote asignado';
+    if (loteId == null || loteId.isEmpty) return 'Sin manga asignada';
     final lote = _allLotes.where((l) => l.id == loteId).firstOrNull;
-    return lote?.nombre ?? 'Sin lote';
+    return lote?.nombre ?? 'Sin manga';
   }
 
   AnimalModel? buscarAnimalPorId(String? animalId) {
     if (animalId == null || animalId.isEmpty) return null;
     return _allAnimales.where((a) => a.id == animalId).firstOrNull;
   }
+
+  // Fuerza reclasificación visual inmediata de todos los animales en memoria
+  // sin recargar desde Supabase. Las categorías se recalculan via getter.
+  void actualizarCategorias() => notifyListeners();
 
   List<LoteModel> obtenerLotesDeFinca(String fincaId) {
     return _allLotes.where((l) => l.fincaId == fincaId).toList();

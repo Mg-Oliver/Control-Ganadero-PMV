@@ -1,6 +1,8 @@
 ﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/columna_tabla.dart';
+import '../../../core/services/inventario_prefs_service.dart';
 import '../../controllers/inventario_controller.dart';
 import 'widgets/drawer/expediente_drawer.dart';
 import 'widgets/entity_card_grid.dart';
@@ -10,11 +12,15 @@ import 'widgets/inventario_sidebar.dart';
 class InventarioScreen extends StatefulWidget {
   final InventarioController? externalController;
   final VoidCallback? onGoToCreacion;
+  final VoidCallback? onGoToCrearFinca;
+  final VoidCallback? onGoToCrearManga;
 
   const InventarioScreen({
     super.key,
     this.externalController,
     this.onGoToCreacion,
+    this.onGoToCrearFinca,
+    this.onGoToCrearManga,
   });
 
   @override
@@ -26,6 +32,11 @@ class _InventarioScreenState extends State<InventarioScreen> {
   late final bool _ownsController;
   final _globalSearchCtrl = TextEditingController();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // 11.1 — vista activa (tarjetas / tabla)
+  VistaInventario _vistaActual = VistaInventario.tarjetas;
+  // 11.2/11.3 — columnas visibles en la tabla de animales
+  Set<ColumnaTabla> _columnasVisibles = Set.of(kColumnasDefault);
 
   @override
   void initState() {
@@ -39,6 +50,31 @@ class _InventarioScreenState extends State<InventarioScreen> {
       _controller.inicializar();
     }
     _globalSearchCtrl.text = _controller.busquedaGlobal;
+    _cargarPreferencias();
+  }
+
+  Future<void> _cargarPreferencias() async {
+    final vista = await InventarioPrefsService.cargarVista();
+    final columnas = await InventarioPrefsService.cargarColumnas();
+    if (mounted) {
+      setState(() {
+        _vistaActual = vista;
+        _columnasVisibles = columnas;
+      });
+    }
+  }
+
+  Future<void> _abrirSelectorColumnas() async {
+    final resultado = await showDialog<Set<ColumnaTabla>>(
+      context: context,
+      builder: (_) => _ColumnasSelectorDialog(
+        columnasActivas: _columnasVisibles,
+      ),
+    );
+    if (resultado != null && mounted) {
+      setState(() => _columnasVisibles = resultado);
+      InventarioPrefsService.guardarColumnas(resultado);
+    }
   }
 
   @override
@@ -55,7 +91,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
       case InventarioSeccion.fincas:
         return 'Fincas Registradas';
       case InventarioSeccion.lotes:
-        return 'Lotes de Manejo';
+        return 'Mangas de Manejo';
       case InventarioSeccion.animales:
         return 'Catálogo General Bovino';
     }
@@ -126,15 +162,16 @@ class _InventarioScreenState extends State<InventarioScreen> {
                                   physics:
                                       const AlwaysScrollableScrollPhysics(),
                                   padding: const EdgeInsets.all(20),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      EntityCardGrid(controller: _controller),
-                                      const SizedBox(height: 22),
-                                      EntityDataTable(controller: _controller),
-                                    ],
-                                  ),
+                                  child: _vistaActual ==
+                                          VistaInventario.tarjetas
+                                      ? EntityCardGrid(
+                                          controller: _controller,
+                                        )
+                                      : EntityDataTable(
+                                          controller: _controller,
+                                          columnasAnimalesActivas:
+                                              _columnasVisibles,
+                                        ),
                                 ),
                               ),
                             ),
@@ -310,6 +347,42 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     onChanged: c.actualizarBusquedaGlobal,
                   ),
                 ),
+                // 11.1.1 — Selector de vista (Tarjetas / Tabla)
+                SegmentedButton<VistaInventario>(
+                  segments: const [
+                    ButtonSegment(
+                      value: VistaInventario.tarjetas,
+                      icon: Icon(Icons.grid_view_rounded, size: 16),
+                      label: Text('Tarjetas'),
+                    ),
+                    ButtonSegment(
+                      value: VistaInventario.tabla,
+                      icon: Icon(Icons.table_rows_rounded, size: 16),
+                      label: Text('Tabla'),
+                    ),
+                  ],
+                  selected: {_vistaActual},
+                  onSelectionChanged: (s) {
+                    setState(() => _vistaActual = s.first);
+                    InventarioPrefsService.guardarVista(s.first);
+                  },
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+                // 11.2.1 — Personalizar Columnas (solo tabla + animales)
+                if (_vistaActual == VistaInventario.tabla &&
+                    c.seccionActiva == InventarioSeccion.animales)
+                  IconButton(
+                    tooltip: 'Personalizar columnas',
+                    onPressed: _abrirSelectorColumnas,
+                    icon: const Icon(
+                      Icons.view_column_outlined,
+                      color: AppColors.primary,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
                 IconButton(
                   tooltip: 'Sincronizar ahora con Supabase',
                   onPressed: c.isLoading
@@ -320,11 +393,33 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     color: AppColors.primary,
                   ),
                 ),
+                if (widget.onGoToCrearFinca != null)
+                  OutlinedButton.icon(
+                    onPressed: widget.onGoToCrearFinca,
+                    icon: const Icon(Icons.landscape_outlined, size: 16),
+                    label: const Text('+ Finca'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                if (widget.onGoToCrearManga != null)
+                  OutlinedButton.icon(
+                    onPressed: widget.onGoToCrearManga,
+                    icon: const Icon(Icons.grid_view_outlined, size: 16),
+                    label: const Text('+ Manga'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.secondary,
+                      side: const BorderSide(color: AppColors.secondary),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
                 if (widget.onGoToCreacion != null)
                   FilledButton.icon(
                     onPressed: widget.onGoToCreacion,
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Nuevo Registro'),
+                    icon: const Icon(Icons.pets_rounded, size: 18),
+                    label: const Text('+ Animal'),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       visualDensity: VisualDensity.compact,
@@ -362,6 +457,134 @@ class _InventarioScreenState extends State<InventarioScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── 11.2 — Diálogo selector de columnas ─────────────────────────────────────
+
+class _ColumnasSelectorDialog extends StatefulWidget {
+  final Set<ColumnaTabla> columnasActivas;
+
+  const _ColumnasSelectorDialog({required this.columnasActivas});
+
+  @override
+  State<_ColumnasSelectorDialog> createState() =>
+      _ColumnasSelectorDialogState();
+}
+
+class _ColumnasSelectorDialogState extends State<_ColumnasSelectorDialog> {
+  late Set<ColumnaTabla> _seleccionadas;
+
+  @override
+  void initState() {
+    super.initState();
+    _seleccionadas = Set.of(widget.columnasActivas);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(
+        'Personalizar columnas',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      content: SizedBox(
+        width: 360,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 11.2.4 — Botones rápidos
+              Wrap(
+                spacing: 8,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => setState(
+                      () => _seleccionadas = Set.of(ColumnaTabla.values),
+                    ),
+                    icon: const Icon(Icons.select_all_rounded, size: 16),
+                    label: const Text('Seleccionar todas'),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: AppColors.primary,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => setState(
+                      () => _seleccionadas = Set.of(kColumnasDefault),
+                    ),
+                    icon: const Icon(Icons.restart_alt_rounded, size: 16),
+                    label: const Text('Restablecer por defecto'),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 16),
+              // 11.2.2 — Checkboxes de columnas
+              ...ColumnaTabla.values.map((col) {
+                final activa = _seleccionadas.contains(col);
+                return CheckboxListTile(
+                  dense: true,
+                  title: Text(
+                    col.label,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  subtitle: col.esAnclaje
+                      ? const Text(
+                          'Columna fija — siempre visible',
+                          style: TextStyle(fontSize: 11),
+                        )
+                      : null,
+                  value: activa,
+                  // 11.2.3 — arete es anclaje, no se puede desmarcar
+                  onChanged: col.esAnclaje
+                      ? null
+                      : (val) {
+                          setState(() {
+                            if (val == true) {
+                              _seleccionadas.add(col);
+                            } else {
+                              _seleccionadas.remove(col);
+                            }
+                          });
+                        },
+                  fillColor: WidgetStateProperty.resolveWith((states) {
+                    if (col.esAnclaje) {
+                      return AppColors.primary.withValues(alpha: 0.5);
+                    }
+                    if (states.contains(WidgetState.selected)) {
+                      return AppColors.primary;
+                    }
+                    return null;
+                  }),
+                  checkColor: Colors.white,
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () {
+            _seleccionadas.add(ColumnaTabla.arete);
+            Navigator.of(context).pop(_seleccionadas);
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+          ),
+          child: const Text('Aplicar'),
+        ),
+      ],
     );
   }
 }

@@ -107,7 +107,7 @@ class FincaCard extends StatelessWidget {
                         ),
                         _MiniChip(
                           icon: Icons.grid_view_rounded,
-                          text: '$lotesCount lotes',
+                          text: '$lotesCount mangas',
                         ),
                         _MiniChip(
                           icon: Icons.pets_rounded,

@@ -92,7 +92,7 @@ class _InventarioSidebarState extends State<InventarioSidebar> {
                     ),
                     const SizedBox(height: 6),
                     _SeccionNavTile(
-                      label: 'Lotes',
+                      label: 'Mangas',
                       icon: Icons.grid_view_rounded,
                       count: c.allLotes.length,
                       selected: c.seccionActiva == InventarioSeccion.lotes,
@@ -225,7 +225,7 @@ class _InventarioSidebarState extends State<InventarioSidebar> {
       case InventarioSeccion.fincas:
         return 'Fincas';
       case InventarioSeccion.lotes:
-        return 'Lotes';
+        return 'Mangas';
       case InventarioSeccion.animales:
         return 'Animales';
     }
@@ -367,7 +367,7 @@ class _InventarioSidebarState extends State<InventarioSidebar> {
         ),
       ),
       _FilterAccordionSection(
-        title: 'Estado del Lote',
+        title: 'Estado de la Manga',
         initiallyExpanded: true,
         child: Wrap(
           spacing: 6,
@@ -411,7 +411,7 @@ class _InventarioSidebarState extends State<InventarioSidebar> {
         ),
       ),
       _FilterAccordionSection(
-        title: 'Ubicación (Finca y Lote)',
+        title: 'Ubicación (Finca y Manga)',
         initiallyExpanded: true,
         child: Column(
           children: [
@@ -441,11 +441,11 @@ class _InventarioSidebarState extends State<InventarioSidebar> {
                   ? c.animalLoteId
                   : null,
               isExpanded: true,
-              decoration: _compactInputDecoration('Todos los lotes'),
+              decoration: _compactInputDecoration('Todas las mangas'),
               items: [
                 const DropdownMenuItem<String?>(
                   value: null,
-                  child: Text('Todos los lotes'),
+                  child: Text('Todas las mangas'),
                 ),
                 ...lotesDisponibles.map(
                   (l) => DropdownMenuItem<String?>(
