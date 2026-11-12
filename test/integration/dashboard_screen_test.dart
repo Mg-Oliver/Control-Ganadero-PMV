@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bovino_mvp/data/models/animal_model.dart';
+import 'package:bovino_mvp/core/utils/formatters.dart';
 import 'package:bovino_mvp/data/models/finca_model.dart';
 import 'package:bovino_mvp/ui/controllers/inventario_controller.dart';
 import 'package:bovino_mvp/ui/screens/dashboard/dashboard_screen.dart';
@@ -211,7 +212,7 @@ void main() {
       expect(find.text('Valor Estimado del Hato'), findsOneWidget);
     });
 
-    testWidgets('9.2.4 — valor \$0 cuando no hay precios registrados',
+    testWidgets('9.2.4 — valor US\$ 0.00 cuando no hay precios registrados',
         (tester) async {
       await tester.pumpWidget(_wrap(DashboardScreen(
         controller: controller,
@@ -220,24 +221,24 @@ void main() {
       )));
       await tester.pump();
 
-      expect(find.text('\$0'), findsOneWidget);
+      expect(find.text(r'US$ 0.00'), findsOneWidget);
     });
   });
 
   group('9.2.4 — Formateo monetario', () {
-    test('formatea cero como \$0', () {
-      expect(_formatMoneda(0), '\$0');
+    test('formatea cero como US\$ 0.00', () {
+      expect(Formatters.formatearMonedaCompacta(0), r'US$ 0.00');
     });
 
     test('formatea millones con sufijo M', () {
-      final resultado = _formatMoneda(5500000);
-      expect(resultado.startsWith('\$'), isTrue);
+      final resultado = Formatters.formatearMonedaCompacta(5500000);
+      expect(resultado.startsWith(r'US$'), isTrue);
       expect(resultado.contains('M'), isTrue);
     });
 
     test('formatea miles sin sufijo especial', () {
-      final resultado = _formatMoneda(850000);
-      expect(resultado.startsWith('\$'), isTrue);
+      final resultado = Formatters.formatearMonedaCompacta(850000);
+      expect(resultado.startsWith(r'US$'), isTrue);
     });
   });
 
@@ -284,23 +285,4 @@ void main() {
       expect(find.text('Animales en Inventario'), findsOneWidget);
     });
   });
-}
-
-// Función auxiliar para test unitario de formateo (replica la lógica interna)
-String _formatMoneda(double valor) {
-  if (valor == 0) return '\$0';
-  if (valor >= 1000000000) {
-    final v = valor / 1000000000;
-    return '\$${v.toStringAsFixed(1)}B';
-  }
-  if (valor >= 1000000) {
-    final v = valor / 1000000;
-    return '\$${v.toStringAsFixed(1)}M';
-  }
-  // Miles simples
-  final miles = valor ~/ 1000;
-  final resto = (valor % 1000).toInt();
-  if (miles > 0 && resto > 0) return '\$${miles}K';
-  if (miles > 0) return '\$${miles}K';
-  return '\$${valor.toStringAsFixed(0)}';
 }

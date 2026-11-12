@@ -59,7 +59,7 @@ INSERT INTO animales (
     'bbbb0001-0001-0001-0001-000100010001', 'GAN-000001', 'TR-101', 'PA-884210', 'Sansão do Rocío', 'Macho', 840.00,
     true, 'Gyr Lechero', '[]'::jsonb, 'Gyr Lechero',
     'Lecheria', '2021-04-10', true, 'Comprado en subasta', NULL,
-    '11111111-1111-1111-1111-111111111111', 'Potrero Los Guayacanes', 'aaaa3333-3333-3333-3333-333333333333', 'Activo', '2022-01-15', 8500000.00, NULL,
+    '11111111-1111-1111-1111-111111111111', 'Potrero Los Guayacanes', 'aaaa3333-3333-3333-3333-333333333333', 'Activo', '2022-01-15', 2150.00, NULL,
     '{"ubicacion_cuerpo":"Pierna izquierda","marcas_orejas":"Muesca superior","color_marcas":"Hierro caliente","observacion_hierro":"Hierro HR coronado"}'::jsonb,
     'Toro probado positivo para producción lechera de hijas.'
 ),
@@ -77,7 +77,7 @@ INSERT INTO animales (
     'bbbb0003-0003-0003-0003-000300030003', 'GAN-000003', 'VC-301', 'PA-901234', 'Milagrosa Holstein', 'Hembra', 620.00,
     true, 'Holstein', '[]'::jsonb, 'Holstein',
     'Lecheria', '2021-02-14', true, 'Comprado en subasta', NULL,
-    '11111111-1111-1111-1111-111111111111', 'Potrero Ordeño 1', 'aaaa3333-3333-3333-3333-333333333333', 'Activo', '2021-09-01', 6000000.00, NULL,
+    '11111111-1111-1111-1111-111111111111', 'Potrero Ordeño 1', 'aaaa3333-3333-3333-3333-333333333333', 'Activo', '2021-09-01', 1500.00, NULL,
     '{"ubicacion_cuerpo":"Pierna izquierda","marcas_orejas":"Tatuaje H-301","color_marcas":"Nitrógeno líquido","observacion_hierro":"Hierro frío"}'::jsonb,
     'Promedio en 2da lactancia: 28 litros/día.'
 ),
@@ -104,9 +104,9 @@ INSERT INTO animales (
     'bbbb0006-0006-0006-0006-000600060006', 'GAN-000006', 'CB-601', NULL, 'Toro Campeón Venta', 'Macho', 580.00,
     true, 'Angus', '[]'::jsonb, 'Angus',
     'Ceba', '2022-01-10', true, 'Comprado en subasta', NULL,
-    '33333333-3333-3333-3333-333333333333', NULL, NULL, 'Vendido', '2022-06-01', 3200000.00, '2024-12-15',
+    '33333333-3333-3333-3333-333333333333', NULL, NULL, 'Vendido', '2022-06-01', 800.00, '2024-12-15',
     '{"ubicacion_cuerpo":"","marcas_orejas":"","color_marcas":"","observacion_hierro":""}'::jsonb,
-    'Precio de Venta: $ 5,800,000 | Vendido para engorde final en Agropecuaria del Norte.'
+    'Precio de Venta: US$ 1,450.00 | Vendido para engorde final en Agropecuaria del Norte.'
 ),
 -- 7. Vaca Muerta (Prueba caso límite de baja)
 (

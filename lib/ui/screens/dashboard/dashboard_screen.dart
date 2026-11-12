@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/poblacion_aggregator.dart';
 import '../../../data/dev/seed_service.dart';
@@ -247,18 +247,6 @@ class _KpiGrid extends StatelessWidget {
     required this.onTapInventario,
   });
 
-  static String _formatMoneda(double valor) {
-    if (valor == 0) return '\$0';
-    final fmt = NumberFormat('#,###', 'es_CO');
-    if (valor >= 1000000000) {
-      return '\$${NumberFormat('#,##0.0', 'es_CO').format(valor / 1000000000)}B';
-    }
-    if (valor >= 1000000) {
-      return '\$${NumberFormat('#,##0.0', 'es_CO').format(valor / 1000000)}M';
-    }
-    return '\$${fmt.format(valor)}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final cards = [
@@ -292,9 +280,9 @@ class _KpiGrid extends StatelessWidget {
       // 9.2.4 — Valor Estimado del Hato
       _KpiCard(
         icon: Icons.attach_money_rounded,
-        valor: _formatMoneda(valorEstimado),
+        valor: Formatters.formatearMonedaCompacta(valorEstimado),
         etiqueta: 'Valor Estimado del Hato',
-        subtexto: 'suma de precios de compra',
+        subtexto: 'suma de precios de compra · USD',
         color: const Color(0xFF047857),
         onTap: null,
         compacto: true,

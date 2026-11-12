@@ -642,10 +642,12 @@ class _AnimalFormState extends State<AnimalForm> {
       var obsFinal = _observacionesCtrl.text.trim();
       if (_estadoActual == 'Vendido' &&
           _precioVentaCtrl.text.trim().isNotEmpty) {
-        final precioVentaFmt = _precioVentaCtrl.text.trim();
+        final precioVentaFmt = Formatters.formatearMoneda(
+          double.parse(_precioVentaCtrl.text.trim().replaceAll(',', '.')),
+        );
         obsFinal = obsFinal.isNotEmpty
-            ? 'Precio de Venta: \$ $precioVentaFmt | $obsFinal'
-            : 'Precio de Venta: \$ $precioVentaFmt';
+            ? 'Precio de Venta: $precioVentaFmt | $obsFinal'
+            : 'Precio de Venta: $precioVentaFmt';
       }
 
       final animal = AnimalModel(
@@ -1830,13 +1832,12 @@ class _AnimalFormState extends State<AnimalForm> {
   Widget _buildPrecioCompraField() {
     return CustomTextField.numeric(
       label: 'Precio de Compra (Opcional)',
-      hint: 'Ej. 3500000',
-      suffixText: 'COP',
+      hint: 'Ej. 1500.00',
+      suffixText: Formatters.codigoMoneda,
       controller: _precioCompraCtrl,
       focusNode: _precioCompraFocus,
       prefixIcon: const Icon(Icons.attach_money_rounded, size: 20),
-      validator: (val) =>
-          Validators.numeroPositivo(val, 'Ingrese un monto válido'),
+      validator: (val) => Validators.monedaUSD(val),
     );
   }
 
@@ -1953,15 +1954,15 @@ class _AnimalFormState extends State<AnimalForm> {
   Widget _buildPrecioVentaField() {
     return CustomTextField.numeric(
       label: 'Precio de Venta',
-      hint: 'Ej. 4500000',
-      suffixText: 'COP',
+      hint: 'Ej. 1800.00',
+      suffixText: Formatters.codigoMoneda,
       controller: _precioVentaCtrl,
       focusNode: _precioVentaFocus,
       isRequired: true,
       prefixIcon: const Icon(Icons.monetization_on_outlined, size: 20),
       validator: (val) {
         if (_estadoActual == 'Vendido') {
-          return Validators.numeroPositivo(val, 'Ingrese el precio de venta');
+          return Validators.monedaUSD(val);
         }
         return null;
       },

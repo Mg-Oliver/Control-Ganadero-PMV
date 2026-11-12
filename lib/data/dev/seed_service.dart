@@ -166,7 +166,7 @@ class SeedService {
       loteId: loteLecheriaPardoId,
       estadoActual: 'Activo',
       fechaEntrada: DateTime(2022, 1, 15),
-      precioCompra: 8500000.0,
+      precioCompra: 2150.0,
       marcasHierro: const MarcasHierro(
         ubicacionCuerpo: 'Pierna izquierda',
         marcasOrejas: 'Muesca superior oreja derecha',
@@ -243,7 +243,7 @@ class SeedService {
       loteId: loteLecheriaPardoId,
       estadoActual: 'Activo',
       fechaEntrada: DateTime(2021, 9, 1),
-      precioCompra: 6000000.0,
+      precioCompra: 1500.0,
       marcasHierro: const MarcasHierro(
         ubicacionCuerpo: 'Pierna izquierda',
         marcasOrejas: 'Tatuaje H-301',
@@ -349,10 +349,10 @@ class SeedService {
       loteId: null, // Desasociado por baja
       estadoActual: 'Vendido',
       fechaEntrada: DateTime(2022, 6, 1),
-      precioCompra: 3200000.0,
+      precioCompra: 800.0,
       fechaSalida: DateTime(2024, 12, 15),
       observaciones:
-          'Precio de Venta: \$ 5,800,000 | Vendido para engorde final en Agropecuaria del Norte.',
+          'Precio de Venta: US\$ 1,450.00 | Vendido para engorde final en Agropecuaria del Norte.',
       fincaNombre: 'Rancho Verde',
       fincaIdentificador: 'FNC-RVD-03',
     );
@@ -474,7 +474,7 @@ class SeedService {
               ? DateTime(2025, 2, 10)
               : null,
           observaciones: (num == 24 || num == 25)
-              ? 'Precio de Venta: \$ 4,200,000'
+              ? 'Precio de Venta: US\$ 1,050.00'
               : 'Ejemplar en monitoreo de ganancia de peso.',
         ),
       );
