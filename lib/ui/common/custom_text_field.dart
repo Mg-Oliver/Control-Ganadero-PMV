@@ -57,6 +57,7 @@ class CustomTextField extends StatelessWidget {
     Widget? prefixIcon,
     bool isRequired = false,
     bool allowDecimals = true,
+    bool enabled = true,
   }) {
     return CustomTextField(
       key: key,
@@ -70,6 +71,7 @@ class CustomTextField extends StatelessWidget {
       onChanged: onChanged,
       prefixIcon: prefixIcon,
       isRequired: isRequired,
+      enabled: enabled,
       keyboardType: TextInputType.numberWithOptions(decimal: allowDecimals),
       inputFormatters: [
         if (allowDecimals)

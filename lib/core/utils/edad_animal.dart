@@ -27,6 +27,20 @@ class EdadAnimal {
     );
   }
 
+  static bool esMayorDeMeses(
+    DateTime nacimiento,
+    int meses,
+    DateTime referencia,
+  ) {
+    final hoy = DateTime(referencia.year, referencia.month, referencia.day);
+    final limite = _mesConDia(
+      nacimiento.year,
+      nacimiento.month + meses,
+      nacimiento.day,
+    );
+    return hoy.isAfter(limite);
+  }
+
   DateTime fechaNacimiento(DateTime referencia) {
     if (anios < 0 ||
         anios > 150 ||

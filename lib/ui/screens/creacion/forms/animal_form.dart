@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/app_feedback.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/edad_animal.dart';
+import '../../../../core/utils/receptora_embriones.dart';
 import '../../../../core/services/categoria_rules_service.dart';
 import '../../../../core/utils/genealogia_validator.dart';
 import '../../../../core/utils/predio_consistency_helper.dart';
@@ -78,6 +79,7 @@ class _AnimalFormState extends State<AnimalForm> {
   final _nombreAliasCtrl = TextEditingController();
   final _pesoActualCtrl = TextEditingController();
   final _numeroPartosCtrl = TextEditingController(text: '0');
+  final _receptoraCtrl = TextEditingController();
 
   final _areteManejoFocus = FocusNode();
   final _areteOficialFocus = FocusNode();
@@ -215,7 +217,8 @@ class _AnimalFormState extends State<AnimalForm> {
     _hierroColorCtrl.text = a.marcasHierro.colorMarcas;
     _hierroObsCtrl.text = a.marcasHierro.observacionHierro;
 
-    _observacionesCtrl.text = a.observaciones ?? '';
+    _observacionesCtrl.text = ReceptoraEmbriones.sinReceptora(a.observaciones);
+    _receptoraCtrl.text = ReceptoraEmbriones.extraer(a.observaciones) ?? '';
 
     final composicion = a.composicionCruces
         .map((e) => Map<String, String>.from(e as Map))
@@ -341,6 +344,7 @@ class _AnimalFormState extends State<AnimalForm> {
     _nombreAliasCtrl.dispose();
     _pesoActualCtrl.dispose();
     _numeroPartosCtrl.dispose();
+    _receptoraCtrl.dispose();
     _areteManejoFocus.dispose();
     _areteOficialFocus.dispose();
     _nombreAliasFocus.dispose();
@@ -383,6 +387,7 @@ class _AnimalFormState extends State<AnimalForm> {
       final animales = await _animalesService.consultarInventarioRelacional();
       if (!mounted || _selectedFincaId != fincaId) return;
       setState(() {
+        _animalesDeFinca = animales;
         if (preselectGenealogia != null) {
           if (preselectGenealogia.padreId != null) {
             _padreSeleccionado = animales
@@ -439,6 +444,7 @@ class _AnimalFormState extends State<AnimalForm> {
     _padreExternoCtrl.clear();
     _madreExternaCtrl.clear();
     _observacionesCtrl.clear();
+    _receptoraCtrl.clear();
 
     setState(() {
       _sexo = widget.sexoInicial ?? 'Hembra';
@@ -657,6 +663,13 @@ class _AnimalFormState extends State<AnimalForm> {
             : 'Precio de Venta: $precioVentaFmt';
       }
 
+      obsFinal = ReceptoraEmbriones.guardar(
+        obsFinal,
+        _tipoPruebaPaterna == 'Transferencia de embriones'
+            ? _receptoraCtrl.text
+            : null,
+      );
+
       final animal = AnimalModel(
         esExterno: _esExterno,
         id: animalId,
@@ -669,9 +682,7 @@ class _AnimalFormState extends State<AnimalForm> {
             ? _nombreAliasCtrl.text.trim()
             : _areteManejoCtrl.text.trim(),
         sexo: _sexo,
-        numeroPartos: _sexo == 'Hembra'
-            ? int.tryParse(_numeroPartosCtrl.text) ?? 0
-            : 0,
+        numeroPartos: _partosActuales,
         pesoActual: pesoActual,
         esRazaPura: _breedSelection.esRazaPura,
         razaPuraNombre: _breedSelection.razaPuraNombre,
@@ -756,9 +767,7 @@ class _AnimalFormState extends State<AnimalForm> {
           fotos: [..._fotosExistentes, ...urlsFotos],
           createdAt: a.createdAt,
           updatedAt: DateTime.now(),
-          numeroPartos: _sexo == 'Hembra'
-              ? int.tryParse(_numeroPartosCtrl.text) ?? 0
-              : 0,
+          numeroPartos: _partosActuales,
           genealogia: genealogia,
         );
 
@@ -931,7 +940,7 @@ class _AnimalFormState extends State<AnimalForm> {
               ),
               const SizedBox(height: 12),
               CustomFormDropdown<String>(
-                label: 'Tipo de nacimiento',
+                label: 'Tipo de concepción',
                 value: _tipoPruebaPaterna,
                 items: const [
                   DropdownMenuItem(
@@ -958,65 +967,86 @@ class _AnimalFormState extends State<AnimalForm> {
                 },
               ),
               const SizedBox(height: 16),
-              _ParentescoSelectorCard(
-                tituloRol: 'Padre (Reproductor / Toro)',
-                iconoRol: Icons.male_rounded,
-                esInterno: _padreEsInterno,
-                esIA: _padreEsIA,
-                candidatosInternos: machosValidos,
-                animalSeleccionado: _padreSeleccionado,
-                referenciaExternaCtrl: _padreExternoCtrl,
-                referenciaExternaFocus: _padreExternoFocus,
-                hintExterno:
-                    'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
-                fincaSeleccionada: _selectedFincaId != null,
-                toroDonante: _toroDonante,
-                todosDonantes: _torosDonantes,
-                onAnimalSelected: (animal) {
-                  setState(() => _padreSeleccionado = animal);
-                },
-                onToroDonante: (toro) {
-                  setState(() => _toroDonante = toro);
-                },
-                onRegistrarNuevo: () => _mostrarModalProgenitor(
-                  sexo: 'Macho',
-                  tituloRol: 'Padre (Reproductor / Toro)',
-                  onAnimalRegistrado: (nuevo) {
-                    setState(() {
-                      _animalesDeFinca = [nuevo, ..._animalesDeFinca];
-                      _padreSeleccionado = nuevo;
-                      _padreEsInterno = true;
-                    });
-                  },
-                ),
-                onRegistrarToroNuevo: _mostrarModalToroDonante,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _ParentescoSelectorCard(
+                      tituloRol: 'Padre (Reproductor / Toro)',
+                      iconoRol: Icons.male_rounded,
+                      esInterno: _padreEsInterno,
+                      esIA: _padreEsIA,
+                      candidatosInternos: machosValidos,
+                      animalSeleccionado: _padreSeleccionado,
+                      referenciaExternaCtrl: _padreExternoCtrl,
+                      referenciaExternaFocus: _padreExternoFocus,
+                      hintExterno:
+                          'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
+                      fincaSeleccionada: _selectedFincaId != null,
+                      toroDonante: _toroDonante,
+                      todosDonantes: _torosDonantes,
+                      onAnimalSelected: (animal) {
+                        setState(() => _padreSeleccionado = animal);
+                      },
+                      onToroDonante: (toro) {
+                        setState(() => _toroDonante = toro);
+                      },
+                      onRegistrarNuevo: () => _mostrarModalProgenitor(
+                        sexo: 'Macho',
+                        tituloRol: 'Padre (Reproductor / Toro)',
+                        onAnimalRegistrado: (nuevo) {
+                          setState(() {
+                            _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                            _padreSeleccionado = nuevo;
+                            _padreEsInterno = true;
+                          });
+                        },
+                      ),
+                      onRegistrarToroNuevo: _mostrarModalToroDonante,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _ParentescoSelectorCard(
+                      tituloRol: 'Madre (Vaca / Donadora)',
+                      iconoRol: Icons.female_rounded,
+                      esInterno: _madreEsInterna,
+                      candidatosInternos: hembrasValidas,
+                      animalSeleccionado: _madreSeleccionada,
+                      referenciaExternaCtrl: _madreExternaCtrl,
+                      referenciaExternaFocus: _madreExternaFocus,
+                      hintExterno:
+                          'Ej. Donadora Embriones Hacienda El Vergel #405',
+                      fincaSeleccionada: _selectedFincaId != null,
+                      onAnimalSelected: (animal) {
+                        setState(() => _madreSeleccionada = animal);
+                      },
+                      onRegistrarNuevo: () => _mostrarModalProgenitor(
+                        sexo: 'Hembra',
+                        tituloRol: 'Madre (Vaca / Donadora)',
+                        onAnimalRegistrado: (nuevo) {
+                          setState(() {
+                            _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                            _madreSeleccionada = nuevo;
+                            _madreEsInterna = true;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              _ParentescoSelectorCard(
-                tituloRol: 'Madre (Vaca / Donadora)',
-                iconoRol: Icons.female_rounded,
-                esInterno: _madreEsInterna,
-                candidatosInternos: hembrasValidas,
-                animalSeleccionado: _madreSeleccionada,
-                referenciaExternaCtrl: _madreExternaCtrl,
-                referenciaExternaFocus: _madreExternaFocus,
-                hintExterno: 'Ej. Donadora Embriones Hacienda El Vergel #405',
-                fincaSeleccionada: _selectedFincaId != null,
-                onAnimalSelected: (animal) {
-                  setState(() => _madreSeleccionada = animal);
-                },
-                onRegistrarNuevo: () => _mostrarModalProgenitor(
-                  sexo: 'Hembra',
-                  tituloRol: 'Madre (Vaca / Donadora)',
-                  onAnimalRegistrado: (nuevo) {
-                    setState(() {
-                      _animalesDeFinca = [nuevo, ..._animalesDeFinca];
-                      _madreSeleccionada = nuevo;
-                      _madreEsInterna = true;
-                    });
-                  },
+              if (_tipoPruebaPaterna == 'Transferencia de embriones') ...[
+                const SizedBox(height: 16),
+                CustomTextField(
+                  label: 'Vaca receptora',
+                  hint: 'Código o nombre de la vaca receptora',
+                  controller: _receptoraCtrl,
+                  helperText:
+                      'Vaca que recibió el embrión; es distinta de la madre genética.',
+                  prefixIcon: const Icon(Icons.pets_outlined),
                 ),
-              ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
@@ -1397,9 +1427,7 @@ class _AnimalFormState extends State<AnimalForm> {
         : CategoriaRulesService.instance.determinarCategoria(
             fechaNacimiento: fecha,
             sexo: _sexo,
-            numeroPartos: _sexo == 'Hembra'
-                ? int.tryParse(_numeroPartosCtrl.text) ?? 0
-                : 0,
+            numeroPartos: _partosActuales,
             tipoExplotacion: _tipoExplotacion,
           );
     return Column(
@@ -1442,12 +1470,26 @@ class _AnimalFormState extends State<AnimalForm> {
     );
   }
 
+  bool get _puedeRegistrarPartos {
+    final fecha = _leerFechaNacimiento(_fechaNacimientoCtrl.text);
+    return _sexo == 'Hembra' &&
+        fecha != null &&
+        EdadAnimal.esMayorDeMeses(fecha, 18, DateTime.now());
+  }
+
+  int get _partosActuales =>
+      _sexo == 'Hembra' ? int.tryParse(_numeroPartosCtrl.text) ?? 0 : 0;
+
   Widget _buildNumeroPartos() => CustomTextField.numeric(
     label: 'Número de partos',
     controller: _numeroPartosCtrl,
+    enabled: _puedeRegistrarPartos,
     allowDecimals: false,
-    helperText: 'Determina la categoría de las hembras.',
+    helperText: _puedeRegistrarPartos
+        ? 'Determina la categoría de las hembras.'
+        : 'Disponible para hembras mayores de 18 meses.',
     validator: (value) {
+      if (!_puedeRegistrarPartos) return null;
       final partos = int.tryParse(value ?? '');
       if (partos == null || partos < 0) return 'Ingrese un número válido';
       if (widget.sexoInicial == 'Hembra' && partos == 0) {
@@ -1651,9 +1693,15 @@ class _AnimalFormState extends State<AnimalForm> {
         style: const TextStyle(fontSize: 11),
       ),
     ),
-    validator: (v) => _leerFechaNacimiento(v) == null
-        ? 'Ingrese una fecha válida entre 1900 y hoy (dd/mm/aaaa)'
-        : null,
+    validator: (v) {
+      if (_leerFechaNacimiento(v) == null) {
+        return 'Ingrese una fecha válida entre 1900 y hoy (dd/mm/aaaa)';
+      }
+      if (widget.sexoInicial == 'Hembra' && !_puedeRegistrarPartos) {
+        return 'La madre debe ser mayor de 18 meses para registrar sus partos';
+      }
+      return null;
+    },
     onChanged: (value) {
       final fecha = _leerFechaNacimiento(value);
       setState(() {

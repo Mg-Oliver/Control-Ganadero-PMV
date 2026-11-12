@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/utils/formatters.dart';
+import '../../../../../core/utils/receptora_embriones.dart';
 import '../../../../../data/models/animal_model.dart';
 import '../../../../../data/models/toro_donante_model.dart';
 import '../../../../common/bovine_avatar_placeholder.dart';
@@ -74,6 +75,8 @@ class AnimalExpedienteView extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorEstado = AnimalCard.colorPorEstado(animal.estadoActual);
     final fincaNom = animal.fincaNombre ?? controller.nombreFincaPorId(animal.fincaId);
+    final receptora = ReceptoraEmbriones.extraer(animal.observaciones);
+    final observaciones = ReceptoraEmbriones.sinReceptora(animal.observaciones);
     final gen = animal.genealogia;
     final padreInterno = controller.buscarAnimalPorId(gen?.padreId);
     final madreInterna = controller.buscarAnimalPorId(gen?.madreId);
@@ -399,15 +402,22 @@ class AnimalExpedienteView extends StatelessWidget {
           ],
         ),
 
-        if (animal.observaciones != null &&
-            animal.observaciones!.trim().isNotEmpty) ...[
+        if (receptora != null && gen?.tipoPruebaPaterna == 'Transferencia de embriones') ...[
+          const SizedBox(height: 12),
+          _DetailBlock(
+            title: 'Transferencia de embriones',
+            icon: Icons.biotech_outlined,
+            children: [_DataPair('Vaca receptora', receptora)],
+          ),
+        ],
+        if (observaciones.trim().isNotEmpty) ...[
           const SizedBox(height: 12),
           _DetailBlock(
             title: 'Observaciones Generales',
             icon: Icons.notes_rounded,
             children: [
               Text(
-                animal.observaciones!,
+                observaciones,
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textPrimary,
