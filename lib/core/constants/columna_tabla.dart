@@ -5,7 +5,6 @@ enum ColumnaTabla {
   categoria,
   raza,
   peso,
-  manga,
   potrero,
   finca,
   estado,
@@ -26,8 +25,6 @@ extension ColumnaTablaLabel on ColumnaTabla {
         return 'Raza / Composición';
       case ColumnaTabla.peso:
         return 'Peso actual';
-      case ColumnaTabla.manga:
-        return 'Manga';
       case ColumnaTabla.potrero:
         return 'Potrero';
       case ColumnaTabla.finca:

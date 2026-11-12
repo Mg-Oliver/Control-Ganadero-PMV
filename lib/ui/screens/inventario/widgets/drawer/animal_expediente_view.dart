@@ -73,7 +73,6 @@ class AnimalExpedienteView extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorEstado = AnimalCard.colorPorEstado(animal.estadoActual);
     final fincaNom = animal.fincaNombre ?? controller.nombreFincaPorId(animal.fincaId);
-    final loteNom = animal.loteNombre ?? controller.nombreLotePorId(animal.loteId);
     final gen = animal.genealogia;
     final padreInterno = controller.buscarAnimalPorId(gen?.padreId);
     final madreInterna = controller.buscarAnimalPorId(gen?.madreId);
@@ -289,7 +288,6 @@ class AnimalExpedienteView extends StatelessWidget {
           icon: Icons.place_outlined,
           children: [
             _DataPair('Finca Asignada', fincaNom),
-            _DataPair('Manga de Manejo', loteNom),
             _DataPair('Potrero Actual', animal.potreroActual ?? 'Sin asignar'),
             _DataPair('Tipo Explotación', animal.tipoExplotacion),
           ],

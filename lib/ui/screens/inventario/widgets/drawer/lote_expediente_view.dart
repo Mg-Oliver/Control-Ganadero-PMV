@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_colors.dart';
-import '../../../../../core/utils/formatters.dart';
 import '../../../../../data/models/lote_model.dart';
 import '../../../../controllers/inventario_controller.dart';
 
@@ -16,7 +15,6 @@ class LoteExpedienteView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final animales = controller.obtenerAnimalesDeLote(lote.id);
     final finca =
         controller.allFincas.where((f) => f.id == lote.fincaId).firstOrNull;
     final esActivo = lote.estado == 'Activo';
@@ -116,51 +114,7 @@ class LoteExpedienteView extends StatelessWidget {
           ),
         ],
 
-        const SizedBox(height: 16),
-        Text(
-          'Animales Asignados a la Manga (${animales.length})',
-          style: const TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        if (animales.isEmpty)
-          const Text(
-            'Actualmente no hay animales asignados a esta manga.',
-            style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-          )
-        else
-          ...animales.map(
-            (a) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Material(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  side: const BorderSide(color: AppColors.border),
-                ),
-                child: ListTile(
-                  dense: true,
-                  leading: const Icon(
-                    Icons.pets_rounded,
-                    color: AppColors.primary,
-                    size: 19,
-                  ),
-                  title: Text(
-                    'Arete ${a.areteManejo}${a.nombreAlias != null ? ' • ${a.nombreAlias}' : ''}',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    '${a.razaEtiquetaDisplay} • ${a.pesoActual != null ? Formatters.formatearPeso(a.pesoActual) : "Sin peso"}',
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded, size: 18),
-                  onTap: () => controller.seleccionarAnimal(a),
-                ),
-              ),
-            ),
-          ),
+
       ],
     );
   }

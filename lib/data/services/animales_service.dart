@@ -7,7 +7,7 @@ class AnimalesService {
   SupabaseClient get _supabase => SupabaseConfig.client;
 
   static const String _selectRelacional =
-      '*, fincas(id, nombre, identificador), lotes(id, nombre, identificador), genealogia!genealogia_animal_id_fkey(*)';
+      '*, fincas(id, nombre, identificador), genealogia!genealogia_animal_id_fkey(*)';
 
   Future<List<AnimalModel>> obtenerPorFinca(
     String fincaId, {
@@ -42,9 +42,6 @@ class AnimalesService {
       if (fincaId != null && fincaId.isNotEmpty) {
         query = query.eq('finca_id', fincaId);
       }
-      if (loteId != null && loteId.isNotEmpty) {
-        query = query.eq('lote_id', loteId);
-      }
       if (sexo != null && sexo.isNotEmpty) {
         query = query.eq('sexo', sexo);
       }
@@ -72,7 +69,7 @@ class AnimalesService {
       final rawAnimales = await _supabase
           .from('animales')
           .select(
-            '*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)',
+            '*, fincas(id, nombre, identificador)',
           )
           .order('created_at', ascending: false);
       final rawGenealogias = await _supabase.from('genealogia').select();
@@ -137,7 +134,7 @@ class AnimalesService {
         .from('animales')
         .insert(animal.toJson(includeId: includeId, includeCodigo: false))
         .select(
-          '*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)',
+          '*, fincas(id, nombre, identificador)',
         )
         .single();
 
@@ -198,7 +195,7 @@ class AnimalesService {
     final response = await _supabase
         .from('animales')
         .select(
-          '*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)',
+          '*, fincas(id, nombre, identificador)',
         )
         .eq('id', animal.id)
         .single();

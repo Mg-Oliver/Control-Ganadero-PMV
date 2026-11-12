@@ -395,7 +395,6 @@ class _InventarioSidebarState extends State<InventarioSidebar> {
   }
 
   List<Widget> _buildFiltrosAnimales(InventarioController c) {
-    final lotesDisponibles = c.lotesDisponiblesParaFiltroAnimal;
 
     return [
       _FilterAccordionSection(
@@ -411,7 +410,7 @@ class _InventarioSidebarState extends State<InventarioSidebar> {
         ),
       ),
       _FilterAccordionSection(
-        title: 'Ubicación (Finca y Manga)',
+        title: 'Ubicación (Finca)',
         initiallyExpanded: true,
         child: Column(
           children: [
@@ -434,28 +433,7 @@ class _InventarioSidebarState extends State<InventarioSidebar> {
               ],
               onChanged: c.setAnimalFincaId,
             ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String?>(
-              key: ValueKey('anim_lote_${c.animalLoteId}_${c.animalFincaId}'),
-              initialValue: lotesDisponibles.any((l) => l.id == c.animalLoteId)
-                  ? c.animalLoteId
-                  : null,
-              isExpanded: true,
-              decoration: _compactInputDecoration('Todas las mangas'),
-              items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('Todas las mangas'),
-                ),
-                ...lotesDisponibles.map(
-                  (l) => DropdownMenuItem<String?>(
-                    value: l.id,
-                    child: Text(l.nombre, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-              ],
-              onChanged: c.setAnimalLoteId,
-            ),
+
           ],
         ),
       ),

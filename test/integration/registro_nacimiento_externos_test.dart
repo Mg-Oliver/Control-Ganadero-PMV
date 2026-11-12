@@ -241,6 +241,8 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Hato'), findsNothing);
+    expect(find.text('Manga de Manejo Actual'), findsNothing);
+    expect(find.text('Nueva manga'), findsNothing);
     expect(find.text('Tipo de Prueba / Respaldo'), findsNothing);
   });
 }

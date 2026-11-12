@@ -290,12 +290,10 @@ class _EntityDataTableState extends State<EntityDataTable> {
           label: const Text('Estado'),
           onSort: (i, asc) => c.ordenarPorColumna(i, asc),
         ),
-        const DataColumn(label: Text('Animales')),
         const DataColumn(label: Text('Dieta Asignada')),
       ],
       rows: slice.map((l) {
         final selected = c.selectedLote?.id == l.id;
-        final anims = c.obtenerAnimalesDeLote(l.id).length;
 
         return DataRow(
           selected: selected,
@@ -319,7 +317,6 @@ class _EntityDataTableState extends State<EntityDataTable> {
                     : AppColors.textSecondary,
               ),
             ),
-            DataCell(Text('$anims cabezas')),
             DataCell(
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 220),
@@ -398,12 +395,6 @@ class _EntityDataTableState extends State<EntityDataTable> {
       cell: (a, _) => DataCell(
         Text(a.pesoActual != null ? a.pesoActual!.toStringAsFixed(2) : '-'),
       ),
-    ),
-    _ColDef(
-      tipo: ColumnaTabla.manga,
-      header: const DataColumn(label: Text('Manga')),
-      cell: (a, ctrl) =>
-          DataCell(Text(a.loteNombre ?? ctrl.nombreLotePorId(a.loteId))),
     ),
     _ColDef(
       tipo: ColumnaTabla.potrero,

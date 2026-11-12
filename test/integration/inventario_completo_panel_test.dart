@@ -11,6 +11,25 @@ import 'package:bovino_mvp/core/utils/poblacion_aggregator.dart';
 import '../helpers/test_theme.dart';
 
 void main() {
+  test('asociaciones históricas no se leen ni se vuelven a guardar', () {
+    final json = <String, dynamic>{
+      'id': 'a1', 'codigo_sistema': 'GAN-1', 'arete_manejo': '1',
+      'sexo': 'Hembra', 'raza_etiqueta_display': 'Holstein',
+      'tipo_explotacion': 'Lecheria', 'fecha_nacimiento': '2020-01-01',
+      'origen': 'Otro', 'finca_id': 'f1', 'lote_id': 'manga-antigua',
+    };
+    final animal = AnimalModel.fromJson(json);
+    expect(animal.loteId, isNull);
+    expect(animal.fincaId, 'f1');
+    expect(animal.copyWith(loteId: 'manga-antigua').toJson()['lote_id'], isNull);
+    final controller = InventarioController();
+    addTearDown(controller.dispose);
+    controller.registrarAnimalOptimista(animal);
+    controller.setAnimalLoteId('manga-antigua');
+    expect(controller.animalesFiltrados.length, 1);
+    expect(controller.obtenerAnimalesDeLote('manga-antigua'), isEmpty);
+  });
+
   testWidgets('inventario muestra todas las tarjetas y filas sin paginación', (
     tester,
   ) async {

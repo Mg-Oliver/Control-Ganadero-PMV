@@ -217,7 +217,7 @@ class AnimalModel {
       origenOtroDetalle: json['origen_otro_detalle'] as String?,
       fincaId: json['finca_id'] as String,
       potreroActual: json['potrero_actual'] as String?,
-      loteId: json['lote_id'] as String?,
+      loteId: null,
       estadoActual: (json['estado_actual'] as String?) ?? 'Activo',
       fechaEntrada: json['fecha_entrada'] != null
           ? DateTime.parse(json['fecha_entrada'].toString())
@@ -273,7 +273,7 @@ class AnimalModel {
       'origen_otro_detalle': origenOtroDetalle,
       'finca_id': fincaId,
       'potrero_actual': potreroActual,
-      'lote_id': loteId,
+      'lote_id': null,
       'estado_actual': estadoActual,
       'fecha_entrada': fechaEntrada.toIso8601String().split('T').first,
       'precio_compra': precioCompra,

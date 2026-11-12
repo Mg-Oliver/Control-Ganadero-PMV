@@ -151,11 +151,7 @@ class LoteCard extends StatelessWidget {
                     bgColor: const Color(0xFFF3F4F6),
                     textColor: AppColors.textPrimary,
                   ),
-                  _BadgeInfo(
-                    text: '$animalesCount animales',
-                    bgColor: const Color(0xFFF3F4F6),
-                    textColor: AppColors.textPrimary,
-                  ),
+
                 ],
               ),
             ],

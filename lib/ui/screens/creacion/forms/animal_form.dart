@@ -11,7 +11,6 @@ import '../../../../data/models/finca_model.dart';
 import '../../../../data/models/genealogia_model.dart';
 import '../../../../data/models/lote_model.dart';
 import '../../../../data/services/animales_service.dart';
-import '../../../../data/services/lotes_service.dart';
 import '../../../../data/services/storage_service.dart';
 import '../../../common/breed_cross_builder.dart';
 import '../../../common/custom_form_dropdown.dart';
@@ -64,7 +63,6 @@ class AnimalForm extends StatefulWidget {
 
 class _AnimalFormState extends State<AnimalForm> {
   final _formKey = GlobalKey<FormState>();
-  final _lotesService = LotesService();
   late final AnimalesService _animalesService;
   final _storageService = StorageService();
   late final TorosDonantesService _torosDonantesService;
@@ -132,7 +130,6 @@ class _AnimalFormState extends State<AnimalForm> {
 
   String _origen = 'Nacido en la finca';
   String? _selectedFincaId;
-  String? _selectedLoteId;
   String _estadoActual = 'Activo';
   bool get _esDeBaja => PredioConsistencyHelper.esEstadoDeBaja(_estadoActual);
   DateTime _fechaEntrada = DateTime.now();
@@ -146,9 +143,7 @@ class _AnimalFormState extends State<AnimalForm> {
   String? _breedErrorText;
 
   // Datos en cascada por Finca
-  List<LoteModel> _lotesDeFinca = [];
   List<AnimalModel> _animalesDeFinca = [];
-  bool _loadingCascada = false;
 
   // Genealogía Padre y Madre
   bool _padreEsInterno = true;
@@ -203,7 +198,6 @@ class _AnimalFormState extends State<AnimalForm> {
         ? a.precioCompra!.toString()
         : '';
     _selectedFincaId = a.fincaId;
-    _selectedLoteId = a.loteId;
     _potreroCtrl.text = a.potreroActual ?? '';
     _estadoActual = a.estadoActual;
     _fechaEntrada = a.fechaEntrada;
@@ -265,7 +259,6 @@ class _AnimalFormState extends State<AnimalForm> {
 
     _cargarDatosEnCascada(
       a.fincaId,
-      preselectLoteId: a.loteId,
       preselectGenealogia: g,
     );
   }
@@ -318,27 +311,10 @@ class _AnimalFormState extends State<AnimalForm> {
       final nuevaFincaId = widget.newlyCreatedFinca!.id;
       setState(() {
         _selectedFincaId = nuevaFincaId;
-        _selectedLoteId = null;
         _padreSeleccionado = null;
         _madreSeleccionada = null;
       });
       _cargarDatosEnCascada(nuevaFincaId);
-      return;
-    }
-
-    if (widget.newlyCreatedLote != null &&
-        widget.newlyCreatedLote?.id != oldWidget.newlyCreatedLote?.id) {
-      final nuevoLote = widget.newlyCreatedLote!;
-      if (nuevoLote.fincaId == _selectedFincaId) {
-        _cargarDatosEnCascada(nuevoLote.fincaId, preselectLoteId: nuevoLote.id);
-      } else {
-        setState(() {
-          _selectedFincaId = nuevoLote.fincaId;
-          _padreSeleccionado = null;
-          _madreSeleccionada = null;
-        });
-        _cargarDatosEnCascada(nuevoLote.fincaId, preselectLoteId: nuevoLote.id);
-      }
       return;
     }
 
@@ -395,31 +371,12 @@ class _AnimalFormState extends State<AnimalForm> {
 
   Future<void> _cargarDatosEnCascada(
     String fincaId, {
-    String? preselectLoteId,
     GenealogiaModel? preselectGenealogia,
   }) async {
-    setState(() => _loadingCascada = true);
     try {
-      final resultados = await Future.wait([
-        _lotesService.obtenerPorFinca(fincaId, soloActivos: true),
-        _animalesService.consultarInventarioRelacional(),
-      ]);
-
+      final animales = await _animalesService.consultarInventarioRelacional();
       if (!mounted || _selectedFincaId != fincaId) return;
-      final lotes = resultados[0] as List<LoteModel>;
-      final animales = resultados[1] as List<AnimalModel>;
-
       setState(() {
-        _lotesDeFinca = lotes;
-        _animalesDeFinca = animales;
-        if (preselectLoteId != null &&
-            lotes.any((l) => l.id == preselectLoteId)) {
-          _selectedLoteId = preselectLoteId;
-        } else if (_selectedLoteId != null &&
-            !lotes.any((l) => l.id == _selectedLoteId)) {
-          _selectedLoteId = null;
-        }
-
         if (preselectGenealogia != null) {
           if (preselectGenealogia.padreId != null) {
             _padreSeleccionado = animales
@@ -436,13 +393,8 @@ class _AnimalFormState extends State<AnimalForm> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _lotesDeFinca = [];
           _animalesDeFinca = [];
         });
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _loadingCascada = false);
       }
     }
   }
@@ -493,7 +445,6 @@ class _AnimalFormState extends State<AnimalForm> {
       _edadMesesCtrl.clear();
       _edadDiasCtrl.clear();
       _origen = 'Nacido en la finca';
-      _selectedLoteId = null;
       _estadoActual = 'Activo';
       _fechaEntrada = DateTime.now();
       _fechaSalida = DateTime.now();
@@ -681,7 +632,7 @@ class _AnimalFormState extends State<AnimalForm> {
       final ubicacionAjustada =
           PredioConsistencyHelper.procesarUbicacionPorEstado(
             estadoActual: _estadoActual,
-            loteIdOriginal: _selectedLoteId,
+            loteIdOriginal: null,
             potreroOriginal: _potreroCtrl.text.trim().isNotEmpty
                 ? _potreroCtrl.text.trim()
                 : null,
@@ -726,7 +677,7 @@ class _AnimalFormState extends State<AnimalForm> {
             : null,
         fincaId: _selectedFincaId!,
         potreroActual: _esExterno ? null : ubicacionAjustada.potreroActual,
-        loteId: _esExterno ? null : ubicacionAjustada.loteId,
+        loteId: null,
         estadoActual: _estadoActual,
         fechaEntrada: _fechaEntrada,
         precioCompra: precioCompra,
@@ -786,7 +737,7 @@ class _AnimalFormState extends State<AnimalForm> {
               : null,
           fincaId: _selectedFincaId!,
           potreroActual: _esExterno ? null : ubicacionAjustada.potreroActual,
-          loteId: _esExterno ? null : ubicacionAjustada.loteId,
+          loteId: null,
           estadoActual: _estadoActual,
           fechaEntrada: _fechaEntrada,
           precioCompra: precioCompra,
@@ -1095,10 +1046,12 @@ class _AnimalFormState extends State<AnimalForm> {
                         'Una hembra con al menos un parto se clasifica como vaca.',
                     validator: (value) {
                       final partos = int.tryParse(value ?? '');
-                      if (partos == null || partos < 0)
+                      if (partos == null || partos < 0) {
                         return 'Ingrese un número válido';
-                      if (widget.sexoInicial == 'Hembra' && partos == 0)
+                      }
+                      if (widget.sexoInicial == 'Hembra' && partos == 0) {
                         return 'La madre debe tener al menos un parto para registrarse como vaca';
+                      }
                       return null;
                     },
                   ),
@@ -1203,28 +1156,7 @@ class _AnimalFormState extends State<AnimalForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 680;
-                    if (isWide) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: _buildFincaCascadeDropdown()),
-                          const SizedBox(width: 14),
-                          Expanded(child: _buildLoteCascadeDropdown()),
-                        ],
-                      );
-                    }
-                    return Column(
-                      children: [
-                        _buildFincaCascadeDropdown(),
-                        const SizedBox(height: 14),
-                        _buildLoteCascadeDropdown(),
-                      ],
-                    );
-                  },
-                ),
+                _buildFincaCascadeDropdown(),
                 const SizedBox(height: 14),
                 LayoutBuilder(
                   builder: (context, constraints) {
@@ -1277,7 +1209,7 @@ class _AnimalFormState extends State<AnimalForm> {
                         Expanded(
                           child: Text(
                             'Animal en estado de $_estadoActual: '
-                            'Se inhabilitan potrero y manga física, y se requiere fecha de salida.',
+                            'Se inhabilita el potrero, y se requiere fecha de salida.',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -1614,7 +1546,7 @@ class _AnimalFormState extends State<AnimalForm> {
                 Text(
                   esEdicion
                       ? 'Actualice los datos biométricos, de genealogía, marcas o ubicación del animal ${widget.animalAEditar!.codigoSistema}.'
-                      : 'Trazabilidad genética Modo A, asignación en cascada Finca → Manga y registro genealógico completo.',
+                      : 'Trazabilidad genética Modo A, ubicación por finca y registro genealógico completo.',
                   style: const TextStyle(
                     fontSize: 12.5,
                     color: AppColors.textSecondary,
@@ -1948,7 +1880,6 @@ class _AnimalFormState extends State<AnimalForm> {
         if (nuevoFincaId == null || nuevoFincaId == _selectedFincaId) return;
         setState(() {
           _selectedFincaId = nuevoFincaId;
-          _selectedLoteId = null;
           _padreSeleccionado = null;
           _madreSeleccionada = null;
         });
@@ -1957,45 +1888,6 @@ class _AnimalFormState extends State<AnimalForm> {
     );
   }
 
-  Widget _buildLoteCascadeDropdown() {
-    return CustomFormDropdown<String>(
-      label: 'Manga de Manejo Actual',
-      value: _selectedLoteId,
-      isLoading: _loadingCascada,
-      enabled: _selectedFincaId != null && !_esDeBaja,
-      hint: _esDeBaja
-          ? 'No aplica (animal dado de baja)'
-          : (_selectedFincaId == null
-                ? 'Seleccione primero una finca'
-                : (_lotesDeFinca.isEmpty
-                      ? 'Sin mangas activas en esta finca'
-                      : 'Seleccione manga (Opcional)')),
-      prefixIcon: const Icon(Icons.grid_view_outlined, size: 20),
-      headerTrailing: (widget.onRequestCreateLote != null && !_esDeBaja)
-          ? TextButton.icon(
-              onPressed: () => widget.onRequestCreateLote!(_selectedFincaId),
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Nueva manga'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                visualDensity: VisualDensity.compact,
-              ),
-            )
-          : null,
-      items: _lotesDeFinca
-          .map(
-            (lote) => DropdownMenuItem<String>(
-              value: lote.id,
-              child: Text(
-                '${lote.nombre} (${lote.propositoProductivo})',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: (val) => setState(() => _selectedLoteId = val),
-    );
-  }
 
   Widget _buildPotreroField() {
     return CustomTextField(
@@ -2028,7 +1920,6 @@ class _AnimalFormState extends State<AnimalForm> {
           setState(() {
             _estadoActual = val;
             if (_esDeBaja) {
-              _selectedLoteId = null;
               _potreroCtrl.clear();
             }
           });

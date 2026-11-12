@@ -3,7 +3,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/app_feedback.dart';
 import '../../../../core/utils/predio_consistency_helper.dart';
 import '../../../../data/models/animal_model.dart';
-import '../../../../data/models/lote_model.dart';
 import '../../../../data/services/animales_service.dart';
 import '../../../controllers/inventario_controller.dart';
 
@@ -32,7 +31,6 @@ class _EditarAnimalDialogState extends State<EditarAnimalDialog> {
 
   late String _estadoSeleccionado;
   late String _tipoExplotacionSeleccionado;
-  String? _loteIdSeleccionado;
   DateTime? _fechaSalida;
 
   bool _guardando = false;
@@ -49,7 +47,6 @@ class _EditarAnimalDialogState extends State<EditarAnimalDialog> {
     _potreroCtrl = TextEditingController(text: a.potreroActual ?? '');
     _estadoSeleccionado = a.estadoActual;
     _tipoExplotacionSeleccionado = a.tipoExplotacion;
-    _loteIdSeleccionado = a.loteId;
     _fechaSalida = a.fechaSalida;
   }
 
@@ -65,16 +62,11 @@ class _EditarAnimalDialogState extends State<EditarAnimalDialog> {
   bool get _esBaja =>
       PredioConsistencyHelper.esEstadoDeBaja(_estadoSeleccionado);
 
-  List<LoteModel> get _lotesDisponibles => widget.controller.allLotes
-      .where((l) => l.fincaId == widget.animal.fincaId)
-      .toList();
-
   void _onEstadoChanged(String? val) {
     if (val == null) return;
     setState(() {
       _estadoSeleccionado = val;
       if (PredioConsistencyHelper.esEstadoDeBaja(val)) {
-        _loteIdSeleccionado = null;
         _potreroCtrl.clear();
         _fechaSalida ??= DateTime.now();
       }
@@ -85,7 +77,7 @@ class _EditarAnimalDialogState extends State<EditarAnimalDialog> {
     final pesoDouble = double.tryParse(_pesoCtrl.text.trim());
     final resultado = PredioConsistencyHelper.procesarUbicacionPorEstado(
       estadoActual: _estadoSeleccionado,
-      loteIdOriginal: _loteIdSeleccionado,
+      loteIdOriginal: null,
       potreroOriginal: _potreroCtrl.text.trim().isEmpty
           ? null
           : _potreroCtrl.text.trim(),
@@ -113,7 +105,7 @@ class _EditarAnimalDialogState extends State<EditarAnimalDialog> {
       origenOtroDetalle: widget.animal.origenOtroDetalle,
       fincaId: widget.animal.fincaId,
       potreroActual: resultado.potreroActual,
-      loteId: resultado.loteId,
+      loteId: null,
       estadoActual: _estadoSeleccionado,
       fechaEntrada: widget.animal.fechaEntrada,
       precioCompra: widget.animal.precioCompra,
@@ -268,7 +260,6 @@ class _EditarAnimalDialogState extends State<EditarAnimalDialog> {
                 ],
                 if (!_esBaja) ...[
                   const SizedBox(height: 12),
-                  _buildMangaDropdown(),
                   const SizedBox(height: 12),
                   _buildTextField(
                     controller: _potreroCtrl,
@@ -352,40 +343,6 @@ class _EditarAnimalDialogState extends State<EditarAnimalDialog> {
         isDense: true,
         items: items,
         onChanged: onChanged,
-      ),
-    );
-  }
-
-  Widget _buildMangaDropdown() {
-    final lotes = _lotesDisponibles;
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: 'Manga',
-        prefixIcon: const Icon(Icons.fence_outlined,
-            size: 18, color: AppColors.primary),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        isDense: true,
-      ),
-      child: DropdownButton<String?>(
-        value: _loteIdSeleccionado,
-        isExpanded: true,
-        underline: const SizedBox.shrink(),
-        isDense: true,
-        items: [
-          const DropdownMenuItem<String?>(
-            value: null,
-            child: Text('Sin manga'),
-          ),
-          ...lotes.map(
-            (l) => DropdownMenuItem<String?>(
-              value: l.id,
-              child: Text(l.nombre),
-            ),
-          ),
-        ],
-        onChanged: (v) => setState(() => _loteIdSeleccionado = v),
       ),
     );
   }

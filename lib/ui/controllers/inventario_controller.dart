@@ -573,7 +573,6 @@ class InventarioController extends ChangeNotifier {
     final resultado = _allAnimales.where((a) {
       if (a.esExterno) return false;
       if (_animalFincaId != null && a.fincaId != _animalFincaId) return false;
-      if (_animalLoteId != null && a.loteId != _animalLoteId) return false;
       if (_animalSexo != null && a.sexo != _animalSexo) return false;
       if (_animalTipoExplotacion != null &&
           a.tipoExplotacion != _animalTipoExplotacion) {
@@ -603,14 +602,12 @@ class InventarioController extends ChangeNotifier {
 
       if (qGlobal.isNotEmpty) {
         final fincaNom = nombreFincaPorId(a.fincaId).toLowerCase();
-        final loteNom = nombreLotePorId(a.loteId).toLowerCase();
         final matchGlobal = a.areteManejo.toLowerCase().contains(qGlobal) ||
             (a.areteOficial ?? '').toLowerCase().contains(qGlobal) ||
             (a.nombreAlias ?? '').toLowerCase().contains(qGlobal) ||
             a.codigoSistema.toLowerCase().contains(qGlobal) ||
             a.razaEtiquetaDisplay.toLowerCase().contains(qGlobal) ||
             fincaNom.contains(qGlobal) ||
-            loteNom.contains(qGlobal) ||
             (a.potreroActual ?? '').toLowerCase().contains(qGlobal);
         if (!matchGlobal) return false;
       }
@@ -767,7 +764,7 @@ class InventarioController extends ChangeNotifier {
   }
 
   List<AnimalModel> obtenerAnimalesDeLote(String loteId) {
-    return _allAnimales.where((a) => !a.esExterno && a.loteId == loteId).toList();
+    return [];
   }
 
   @override
