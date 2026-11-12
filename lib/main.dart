@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'core/config/supabase_config.dart';
 import 'core/constants/app_colors.dart';
 import 'core/services/app_feedback.dart';
+import 'core/services/categoria_rules_service.dart';
 import 'data/dev/seed_service.dart';
 import 'ui/common/app_drawer.dart';
 import 'ui/controllers/inventario_controller.dart';
@@ -13,6 +14,7 @@ import 'ui/screens/reproduccion/reproduccion_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  CategoriaRulesService.updateInstance(await CategoriaRulesService.cargar());
   try {
     await SupabaseConfig.initialize();
   } catch (e) {

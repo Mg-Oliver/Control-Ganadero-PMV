@@ -16,6 +16,7 @@ class CustomTextField extends StatelessWidget {
   final int maxLines;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
+  final Widget? headerTrailing;
   final bool readOnly;
   final bool enabled;
   final bool isRequired;
@@ -36,6 +37,7 @@ class CustomTextField extends StatelessWidget {
     this.maxLines = 1,
     this.prefixIcon,
     this.suffixIcon,
+    this.headerTrailing,
     this.readOnly = false,
     this.enabled = true,
     this.isRequired = false,
@@ -83,25 +85,32 @@ class CustomTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RichText(
-          text: TextSpan(
-            text: label,
-            style: const TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-            children: [
-              if (isRequired)
-                const TextSpan(
-                  text: ' *',
-                  style: TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.bold,
+        Row(
+          children: [
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  text: label,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
+                  children: [
+                    if (isRequired)
+                      const TextSpan(
+                        text: ' *',
+                        style: TextStyle(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+            ),
+            ?headerTrailing,
+          ],
         ),
         const SizedBox(height: 6),
         TextFormField(
@@ -121,7 +130,10 @@ class CustomTextField extends StatelessWidget {
           ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13.5),
+            hintStyle: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13.5,
+            ),
             helperText: helperText,
             suffixText: suffixText,
             prefixIcon: prefixIcon,
@@ -130,7 +142,10 @@ class CustomTextField extends StatelessWidget {
             fillColor: (!enabled || readOnly)
                 ? const Color(0xFFF3F4F6)
                 : Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: AppColors.border),
@@ -145,7 +160,10 @@ class CustomTextField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.6,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),

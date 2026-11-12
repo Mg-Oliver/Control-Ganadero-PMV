@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/categoria_rule_model.dart';
 
@@ -51,12 +52,16 @@ class CategoriaRulesService {
   List<CategoriaRuleModel> _reglas;
 
   CategoriaRulesService([List<CategoriaRuleModel>? reglas])
-      : _reglas = reglas ?? reglasDefault;
+    : _reglas = reglas ?? reglasDefault;
 
   // Singleton global para acceso reactivo desde AnimalModel y la UI
   static CategoriaRulesService _instance = CategoriaRulesService();
   static CategoriaRulesService get instance => _instance;
-  static void updateInstance(CategoriaRulesService svc) => _instance = svc;
+  static final cambios = ValueNotifier<int>(0);
+  static void updateInstance(CategoriaRulesService svc) {
+    _instance = svc;
+    cambios.value++;
+  }
 
   List<CategoriaRuleModel> get reglas => List.unmodifiable(_reglas);
 

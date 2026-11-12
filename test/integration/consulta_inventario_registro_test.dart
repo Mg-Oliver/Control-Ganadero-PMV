@@ -51,10 +51,10 @@ void main() {
         );
         await tester.pumpAndSettle();
         final estado = tester.state(find.byType(AnimalForm));
-        await tester.ensureVisible(campo('Arete de Manejo'));
-        await tester.enterText(campo('Arete de Manejo'), 'NUEVO-123');
-        await tester.ensureVisible(campo('Nombre o Alias'));
-        await tester.enterText(campo('Nombre o Alias'), 'Lucera');
+        await tester.ensureVisible(campo('Código de animal'));
+        await tester.enterText(campo('Código de animal'), 'NUEVO-123');
+        await tester.ensureVisible(campo('Nombre'));
+        await tester.enterText(campo('Nombre'), 'Lucera');
         await tester.ensureVisible(campo('Fecha de Nacimiento'));
         await tester.enterText(campo('Fecha de Nacimiento'), '15/03/2024');
         for (var visita = 0; visita < 2; visita++) {
@@ -74,14 +74,14 @@ void main() {
           expect(tester.state(find.byType(AnimalForm)), same(estado));
           expect(
             tester
-                .widget<TextFormField>(campo('Arete de Manejo'))
+                .widget<TextFormField>(campo('Código de animal'))
                 .controller!
                 .text,
             'NUEVO-123',
           );
           expect(
             tester
-                .widget<TextFormField>(campo('Nombre o Alias'))
+                .widget<TextFormField>(campo('Nombre'))
                 .controller!
                 .text,
             'Lucera',

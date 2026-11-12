@@ -120,7 +120,7 @@ void main() {
       await tester.tap(registrar);
       await tester.pumpAndSettle();
       expect(find.text('¿Forma parte de la finca?'), findsOneWidget);
-      await tester.enterText(campo('Arete de Manejo'), 'TORO-EXT');
+      await tester.enterText(campo('Código de animal'), 'TORO-EXT');
       final raza = find.text(
         'Buscar y seleccionar raza pura (Holstein, Brahman, Gyr...)',
       );
@@ -161,65 +161,48 @@ void main() {
     expect(estado.validate(), isTrue);
     expect(find.byType(DatePickerDialog), findsNothing);
     expect(
-      tester.getTopLeft(find.text('¿Fecha de nacimiento exacta conocida?')).dy,
-      lessThan(tester.getTopLeft(fecha).dy),
+      tester
+          .widget<CustomTextField>(
+            find.byWidgetPredicate(
+              (w) => w is CustomTextField && w.label == 'Fecha de Nacimiento',
+            ),
+          )
+          .suffixIcon,
+      isNull,
     );
   });
 
-  testWidgets(
-    'edad calcula nacimiento aproximado y permite volver a fecha exacta',
-    (tester) async {
-      await abrirFormulario(tester);
-      final modoEdad = find.widgetWithText(
-        SwitchListTile,
-        'Ingresar edad actual',
-      );
-      await tester.ensureVisible(modoEdad);
-      await tester.tap(modoEdad);
-      await tester.pump();
-      final dias = campo('Días');
-      await tester.ensureVisible(dias);
-      await tester.enterText(dias, '10');
-      await tester.pump();
-      final fecha = tester.widget<TextFormField>(campo('Fecha de Nacimiento'));
-      expect(
-        fecha.controller!.text,
-        DateFormat(
-          'dd/MM/yyyy',
-        ).format(DateTime.now().subtract(const Duration(days: 10))),
-      );
-      expect(
-        tester
-            .widget<EditableText>(
-              find.descendant(
-                of: campo('Fecha de Nacimiento'),
-                matching: find.byType(EditableText),
-              ),
-            )
-            .readOnly,
-        isTrue,
-      );
-      final exacta = find.widgetWithText(
-        SwitchListTile,
-        '¿Fecha de nacimiento exacta conocida?',
-      );
-      expect(tester.widget<SwitchListTile>(exacta).value, isFalse);
-      await tester.ensureVisible(exacta);
-      await tester.tap(exacta);
-      await tester.pump();
-      expect(
-        tester
-            .widget<EditableText>(
-              find.descendant(
-                of: campo('Fecha de Nacimiento'),
-                matching: find.byType(EditableText),
-              ),
-            )
-            .readOnly,
-        isFalse,
-      );
-    },
-  );
+  testWidgets('edad calcula nacimiento aproximado y la fecha sigue editable', (
+    tester,
+  ) async {
+    await abrirFormulario(tester);
+    for (final label in ['Años', 'Meses', 'Días']) {
+      await tester.ensureVisible(campo(label));
+      await tester.enterText(campo(label), label == 'Días' ? '10' : '0');
+    }
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextFormField>(campo('Fecha de Nacimiento'))
+          .controller!
+          .text,
+      DateFormat(
+        'dd/MM/yyyy',
+      ).format(DateTime.now().subtract(const Duration(days: 10))),
+    );
+    expect(find.text('Aproximada'), findsOneWidget);
+    expect(
+      tester
+          .widget<EditableText>(
+            find.descendant(
+              of: campo('Fecha de Nacimiento'),
+              matching: find.byType(EditableText),
+            ),
+          )
+          .readOnly,
+      isFalse,
+    );
+  });
 
   testWidgets('progenitor usa formulario completo y pregunta pertenencia', (
     tester,
@@ -230,10 +213,7 @@ void main() {
       '¿Forma parte de la finca?',
     );
     expect(pertenencia, findsOneWidget);
-    expect(
-      find.text('5. Observaciones y Registro Fotográfico'),
-      findsOneWidget,
-    );
+    expect(find.text('Fotografías del Animal (Máx. 3)'), findsOneWidget);
     await tester.tap(pertenencia);
     await tester.pump();
     expect(

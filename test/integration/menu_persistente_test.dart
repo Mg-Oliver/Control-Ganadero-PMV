@@ -45,8 +45,8 @@ void main() {
       expect(menu('Inventario'), findsOneWidget);
       expect(find.byType(AnimalForm), findsOneWidget);
       final estado = tester.state(find.byType(AnimalForm));
-      await tester.ensureVisible(campo('Arete de Manejo'));
-      await tester.enterText(campo('Arete de Manejo'), 'BORRADOR-123');
+      await tester.ensureVisible(campo('Código de animal'));
+      await tester.enterText(campo('Código de animal'), 'BORRADOR-123');
       await tester.tap(menu('Ciclo Reproductivo'));
       await tester.pumpAndSettle();
       expect(find.text('Control reproductivo del hato'), findsOneWidget);
@@ -57,7 +57,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.state(find.byType(AnimalForm)), same(estado));
       expect(
-        tester.widget<TextFormField>(campo('Arete de Manejo')).controller!.text,
+        tester.widget<TextFormField>(campo('Código de animal')).controller!.text,
         'BORRADOR-123',
       );
       expect(menu('Configuración'), findsOneWidget);

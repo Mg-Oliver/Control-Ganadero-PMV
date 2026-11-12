@@ -3,6 +3,8 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/app_feedback.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/edad_animal.dart';
+import '../../../../core/services/categoria_rules_service.dart';
 import '../../../../core/utils/genealogia_validator.dart';
 import '../../../../core/utils/predio_consistency_helper.dart';
 import '../../../../core/utils/validators.dart';
@@ -123,7 +125,6 @@ class _AnimalFormState extends State<AnimalForm> {
     const Duration(days: 180),
   );
   bool _fechaNacimientoExacta = true;
-  bool _ingresarEdad = false;
   bool _esExterno = false;
   final _fechaNacimientoCtrl = TextEditingController();
   final _edadAniosCtrl = TextEditingController();
@@ -180,6 +181,9 @@ class _AnimalFormState extends State<AnimalForm> {
       _selectedFincaId = widget.fincaInicialId ?? widget.fincas.first.id;
       _cargarDatosEnCascada(_selectedFincaId!);
     }
+    _actualizarEdadDesdeFecha();
+    _numeroPartosCtrl.addListener(_refrescarCategoria);
+    CategoriaRulesService.cambios.addListener(_refrescarCategoria);
   }
 
   void _cargarDatosAnimalAEditar(AnimalModel a) {
@@ -193,6 +197,7 @@ class _AnimalFormState extends State<AnimalForm> {
     _esExterno = a.esExterno;
     _fechaNacimiento = a.fechaNacimiento;
     _fechaNacimientoCtrl.text = Formatters.formatearFecha(_fechaNacimiento);
+    _actualizarEdadDesdeFecha();
     _fechaNacimientoExacta = a.fechaNacimientoExacta;
     _origen = a.origen;
     _origenOtroCtrl.text = a.origenOtroDetalle ?? '';
@@ -325,6 +330,8 @@ class _AnimalFormState extends State<AnimalForm> {
 
   @override
   void dispose() {
+    CategoriaRulesService.cambios.removeListener(_refrescarCategoria);
+    _numeroPartosCtrl.removeListener(_refrescarCategoria);
     _fechaNacimientoCtrl.dispose();
     _edadAniosCtrl.dispose();
     _edadMesesCtrl.dispose();
@@ -439,10 +446,10 @@ class _AnimalFormState extends State<AnimalForm> {
       _fechaNacimiento = DateTime.now().subtract(const Duration(days: 180));
       _fechaNacimientoExacta = true;
       _fechaNacimientoCtrl.text = Formatters.formatearFecha(_fechaNacimiento);
-      _ingresarEdad = false;
       _edadAniosCtrl.clear();
       _edadMesesCtrl.clear();
       _edadDiasCtrl.clear();
+      _actualizarEdadDesdeFecha();
       _origen = 'Nacido en la finca';
       _estadoActual = 'Activo';
       _fechaEntrada = DateTime.now();
@@ -847,747 +854,624 @@ class _AnimalFormState extends State<AnimalForm> {
             ),
             const SizedBox(height: 12),
           ],
-          _buildHeaderBanner(),
-          const SizedBox(height: 16),
-
-          // SECCIÓN 1: IDENTIFICACIÓN Y BIOMETRÍA
-          _FormSectionCard(
-            title: widget.animalAEditar != null
-                ? '1. Identificación y Biometría · ${widget.animalAEditar!.codigoSistema}'
-                : '1. Identificación y Biometría',
-            icon: Icons.badge_outlined,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 680;
-                    if (isWide) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: _buildAreteManejoField()),
-                          const SizedBox(width: 14),
-                          Expanded(child: _buildAreteOficialField()),
-                        ],
-                      );
-                    }
-                    return Column(
-                      children: [
-                        _buildAreteManejoField(),
-                        const SizedBox(height: 12),
-                        _buildAreteOficialField(),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 14),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 680;
-                    if (isWide) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 2, child: _buildNombreAliasField()),
-                          const SizedBox(width: 14),
-                          Expanded(child: _buildSexoDropdown()),
-                          const SizedBox(width: 14),
-                          Expanded(child: _buildPesoActualField()),
-                        ],
-                      );
-                    }
-                    return Column(
-                      children: [
-                        _buildNombreAliasField(),
-                        const SizedBox(height: 12),
-                        _buildSexoDropdown(),
-                        const SizedBox(height: 12),
-                        _buildPesoActualField(),
-                      ],
-                    );
-                  },
+          _filaCampos([
+            _buildAreteManejoField(),
+            _buildAreteOficialField(),
+            _buildNombreAliasField(),
+          ]),
+          const SizedBox(height: 18),
+          _filaCampos([
+            _buildSexoDropdown(),
+            _buildFechaNacimientoSelector(),
+            _buildEdadActual(),
+          ]),
+          const SizedBox(height: 18),
+          _filaCampos([
+            _buildCategoriaAutomatica(),
+            _buildTipoExplotacionDropdown(),
+            _buildOrigenDropdown(),
+          ]),
+          const SizedBox(height: 18),
+          _filaCampos([
+            _buildPesoActualField(),
+            if (_sexo == 'Hembra') _buildNumeroPartos(),
+            if (_esOrigenComprado) _buildPrecioCompraField(),
+          ]),
+          if (_origen == 'Otro') ...[
+            const SizedBox(height: 18),
+            _buildOrigenOtroField(),
+          ],
+          const SizedBox(height: 22),
+          // SECCIÓN 2: GENÉTICA Y LINAJE (RAZA, CLASIFICACIÓN Y PROGENITORES FUSIONADOS)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              BreedCrossBuilder(
+                initialValue: _breedSelection,
+                onChanged: (res) {
+                  setState(() {
+                    _breedSelection = res;
+                    if (res.isValid) _breedErrorText = null;
+                  });
+                },
+              ),
+              if (_breedErrorText != null) ...[
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    _breedErrorText!,
+                    style: const TextStyle(
+                      color: AppColors.error,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // SECCIÓN 2: GENÉTICA Y LINAJE (RAZA, CLASIFICACIÓN Y PROGENITORES FUSIONADOS)
-          _FormSectionCard(
-            title: '2. Genética y Linaje',
-            icon: Icons.biotech_outlined,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                BreedCrossBuilder(
-                  initialValue: _breedSelection,
-                  onChanged: (res) {
+              const SizedBox(height: 16),
+              const Divider(height: 28),
+              const Row(
+                children: [
+                  Icon(
+                    Icons.account_tree_outlined,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Linaje y Progenitores',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              CustomFormDropdown<String>(
+                label: 'Tipo de nacimiento',
+                value: _tipoPruebaPaterna,
+                items: const [
+                  DropdownMenuItem(
+                    value: 'Visual / Monta natural',
+                    child: Text('Monta Natural'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Inseminacion',
+                    child: Text('Inseminación artificial'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Transferencia de embriones',
+                    child: Text('Transferencia de embriones'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _tipoPruebaPaterna = value;
+                    _padreEsIA = value == 'Inseminacion';
+                    _padreEsInterno = !_padreEsIA;
+                    _madreEsInterna = true;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              _ParentescoSelectorCard(
+                tituloRol: 'Padre (Reproductor / Toro)',
+                iconoRol: Icons.male_rounded,
+                esInterno: _padreEsInterno,
+                esIA: _padreEsIA,
+                candidatosInternos: machosValidos,
+                animalSeleccionado: _padreSeleccionado,
+                referenciaExternaCtrl: _padreExternoCtrl,
+                referenciaExternaFocus: _padreExternoFocus,
+                hintExterno:
+                    'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
+                fincaSeleccionada: _selectedFincaId != null,
+                toroDonante: _toroDonante,
+                todosDonantes: _torosDonantes,
+                onAnimalSelected: (animal) {
+                  setState(() => _padreSeleccionado = animal);
+                },
+                onToroDonante: (toro) {
+                  setState(() => _toroDonante = toro);
+                },
+                onRegistrarNuevo: () => _mostrarModalProgenitor(
+                  sexo: 'Macho',
+                  tituloRol: 'Padre (Reproductor / Toro)',
+                  onAnimalRegistrado: (nuevo) {
                     setState(() {
-                      _breedSelection = res;
-                      if (res.isValid) _breedErrorText = null;
+                      _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                      _padreSeleccionado = nuevo;
+                      _padreEsInterno = true;
                     });
                   },
                 ),
-                if (_breedErrorText != null) ...[
-                  const SizedBox(height: 6),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Text(
-                      _breedErrorText!,
-                      style: const TextStyle(
-                        color: AppColors.error,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 16),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  value: _fechaNacimientoExacta,
-                  activeTrackColor: AppColors.primary,
-                  title: const Text(
-                    '¿Fecha de nacimiento exacta conocida?',
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Text(
-                    _fechaNacimientoExacta
-                        ? 'Registrada según parto documentado'
-                        : 'Estimada por cronometría dentaria / fenotipo (aproximada)',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  onChanged: (val) => setState(() {
-                    _fechaNacimientoExacta = val;
-                    if (val) _ingresarEdad = false;
-                  }),
-                ),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 680;
-                    if (isWide) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: _buildTipoExplotacionDropdown()),
-                          const SizedBox(width: 14),
-                          Expanded(child: _buildFechaNacimientoSelector()),
-                        ],
-                      );
-                    }
-                    return Column(
-                      children: [
-                        _buildTipoExplotacionDropdown(),
-                        const SizedBox(height: 14),
-                        _buildFechaNacimientoSelector(),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                const Divider(height: 20),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 680;
-                    final mostrarDetalleOtro = _origen == 'Otro';
-                    final mostrarPrecio = _esOrigenComprado;
-
-                    if (isWide && (mostrarDetalleOtro || mostrarPrecio)) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: _buildOrigenDropdown()),
-                          if (mostrarDetalleOtro) ...[
-                            const SizedBox(width: 14),
-                            Expanded(child: _buildOrigenOtroField()),
-                          ],
-                          if (mostrarPrecio) ...[
-                            const SizedBox(width: 14),
-                            Expanded(child: _buildPrecioCompraField()),
-                          ],
-                        ],
-                      );
-                    }
-                    return Column(
-                      children: [
-                        _buildOrigenDropdown(),
-                        if (mostrarDetalleOtro) ...[
-                          const SizedBox(height: 12),
-                          _buildOrigenOtroField(),
-                        ],
-                        if (mostrarPrecio) ...[
-                          const SizedBox(height: 12),
-                          _buildPrecioCompraField(),
-                        ],
-                      ],
-                    );
-                  },
-                ),
-                const Divider(height: 28),
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.account_tree_outlined,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Linaje y Progenitores',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_sexo == 'Hembra') ...[
-                  CustomTextField.numeric(
-                    label: 'Número de partos',
-                    controller: _numeroPartosCtrl,
-                    allowDecimals: false,
-                    helperText:
-                        'Una hembra con al menos un parto se clasifica como vaca.',
-                    validator: (value) {
-                      final partos = int.tryParse(value ?? '');
-                      if (partos == null || partos < 0) {
-                        return 'Ingrese un número válido';
-                      }
-                      if (widget.sexoInicial == 'Hembra' && partos == 0) {
-                        return 'La madre debe tener al menos un parto para registrarse como vaca';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                CustomFormDropdown<String>(
-                  label: 'Tipo de nacimiento',
-                  value: _tipoPruebaPaterna,
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'Visual / Monta natural',
-                      child: Text('Monta Natural'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'Inseminacion',
-                      child: Text('Inseminación artificial'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'Transferencia de embriones',
-                      child: Text('Transferencia de embriones'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
+                onRegistrarToroNuevo: _mostrarModalToroDonante,
+              ),
+              const SizedBox(height: 16),
+              _ParentescoSelectorCard(
+                tituloRol: 'Madre (Vaca / Donadora)',
+                iconoRol: Icons.female_rounded,
+                esInterno: _madreEsInterna,
+                candidatosInternos: hembrasValidas,
+                animalSeleccionado: _madreSeleccionada,
+                referenciaExternaCtrl: _madreExternaCtrl,
+                referenciaExternaFocus: _madreExternaFocus,
+                hintExterno: 'Ej. Donadora Embriones Hacienda El Vergel #405',
+                fincaSeleccionada: _selectedFincaId != null,
+                onAnimalSelected: (animal) {
+                  setState(() => _madreSeleccionada = animal);
+                },
+                onRegistrarNuevo: () => _mostrarModalProgenitor(
+                  sexo: 'Hembra',
+                  tituloRol: 'Madre (Vaca / Donadora)',
+                  onAnimalRegistrado: (nuevo) {
                     setState(() {
-                      _tipoPruebaPaterna = value;
-                      _padreEsIA = value == 'Inseminacion';
-                      _padreEsInterno = !_padreEsIA;
+                      _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                      _madreSeleccionada = nuevo;
                       _madreEsInterna = true;
                     });
                   },
                 ),
-                const SizedBox(height: 16),
-                _ParentescoSelectorCard(
-                  tituloRol: 'Padre (Reproductor / Toro)',
-                  iconoRol: Icons.male_rounded,
-                  esInterno: _padreEsInterno,
-                  esIA: _padreEsIA,
-                  candidatosInternos: machosValidos,
-                  animalSeleccionado: _padreSeleccionado,
-                  referenciaExternaCtrl: _padreExternoCtrl,
-                  referenciaExternaFocus: _padreExternoFocus,
-                  hintExterno:
-                      'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
-                  fincaSeleccionada: _selectedFincaId != null,
-                  toroDonante: _toroDonante,
-                  todosDonantes: _torosDonantes,
-                  onAnimalSelected: (animal) {
-                    setState(() => _padreSeleccionado = animal);
-                  },
-                  onToroDonante: (toro) {
-                    setState(() => _toroDonante = toro);
-                  },
-                  onRegistrarNuevo: () => _mostrarModalProgenitor(
-                    sexo: 'Macho',
-                    tituloRol: 'Padre (Reproductor / Toro)',
-                    onAnimalRegistrado: (nuevo) {
-                      setState(() {
-                        _animalesDeFinca = [nuevo, ..._animalesDeFinca];
-                        _padreSeleccionado = nuevo;
-                        _padreEsInterno = true;
-                      });
-                    },
-                  ),
-                  onRegistrarToroNuevo: _mostrarModalToroDonante,
-                ),
-                const SizedBox(height: 16),
-                _ParentescoSelectorCard(
-                  tituloRol: 'Madre (Vaca / Donadora)',
-                  iconoRol: Icons.female_rounded,
-                  esInterno: _madreEsInterna,
-                  candidatosInternos: hembrasValidas,
-                  animalSeleccionado: _madreSeleccionada,
-                  referenciaExternaCtrl: _madreExternaCtrl,
-                  referenciaExternaFocus: _madreExternaFocus,
-                  hintExterno: 'Ej. Donadora Embriones Hacienda El Vergel #405',
-                  fincaSeleccionada: _selectedFincaId != null,
-                  onAnimalSelected: (animal) {
-                    setState(() => _madreSeleccionada = animal);
-                  },
-                  onRegistrarNuevo: () => _mostrarModalProgenitor(
-                    sexo: 'Hembra',
-                    tituloRol: 'Madre (Vaca / Donadora)',
-                    onAnimalRegistrado: (nuevo) {
-                      setState(() {
-                        _animalesDeFinca = [nuevo, ..._animalesDeFinca];
-                        _madreSeleccionada = nuevo;
-                        _madreEsInterna = true;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
           // SECCIÓN 3: UBICACIÓN EN CASCADA (FINCA -> LOTES)
-          _FormSectionCard(
-            title: '3. Ubicación Actual y Manejo Productivo',
-            icon: Icons.place_outlined,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildFincaCascadeDropdown(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildFincaCascadeDropdown(),
+              const SizedBox(height: 14),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 680;
+                  if (isWide) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _buildPotreroField()),
+                        const SizedBox(width: 14),
+                        Expanded(child: _buildEstadoActualDropdown()),
+                        const SizedBox(width: 14),
+                        Expanded(child: _buildFechaEntradaSelector()),
+                      ],
+                    );
+                  }
+                  return Column(
+                    children: [
+                      _buildPotreroField(),
+                      const SizedBox(height: 12),
+                      _buildEstadoActualDropdown(),
+                      const SizedBox(height: 12),
+                      _buildFechaEntradaSelector(),
+                    ],
+                  );
+                },
+              ),
+              if (_esDeBaja) ...[
                 const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        size: 18,
+                        color: Color(0xFFD97706),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Animal en estado de $_estadoActual: '
+                          'Se inhabilita el potrero, y se requiere fecha de salida.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth > 680;
-                    if (isWide) {
+                    if (isWide && _estadoActual == 'Vendido') {
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _buildPotreroField()),
+                          Expanded(child: _buildFechaSalidaSelector()),
                           const SizedBox(width: 14),
-                          Expanded(child: _buildEstadoActualDropdown()),
-                          const SizedBox(width: 14),
-                          Expanded(child: _buildFechaEntradaSelector()),
+                          Expanded(child: _buildPrecioVentaField()),
                         ],
                       );
                     }
                     return Column(
                       children: [
-                        _buildPotreroField(),
-                        const SizedBox(height: 12),
-                        _buildEstadoActualDropdown(),
-                        const SizedBox(height: 12),
-                        _buildFechaEntradaSelector(),
+                        _buildFechaSalidaSelector(),
+                        if (_estadoActual == 'Vendido') ...[
+                          const SizedBox(height: 12),
+                          _buildPrecioVentaField(),
+                        ],
                       ],
                     );
                   },
                 ),
-                if (_esDeBaja) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          size: 18,
-                          color: Color(0xFFD97706),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Animal en estado de $_estadoActual: '
-                            'Se inhabilita el potrero, y se requiere fecha de salida.',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF92400E),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWide = constraints.maxWidth > 680;
-                      if (isWide && _estadoActual == 'Vendido') {
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(child: _buildFechaSalidaSelector()),
-                            const SizedBox(width: 14),
-                            Expanded(child: _buildPrecioVentaField()),
-                          ],
-                        );
-                      }
-                      return Column(
-                        children: [
-                          _buildFechaSalidaSelector(),
-                          if (_estadoActual == 'Vendido') ...[
-                            const SizedBox(height: 12),
-                            _buildPrecioVentaField(),
-                          ],
-                        ],
-                      );
-                    },
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
           const SizedBox(height: 16),
 
           // SECCIÓN 4: MARCAS DE HIERRO Y SEÑALES
-          _FormSectionCard(
-            title: '4. Marcas de Hierro y Señales Físicas',
-            icon: Icons.branding_watermark_outlined,
-            child: Column(
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 680;
-                    if (isWide) {
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              label: 'Ubicación en el Cuerpo',
-                              hint: 'Ej. Pierna derecha / Paleta izquierda',
-                              controller: _hierroUbicacionCtrl,
-                              focusNode: _hierroUbicacionFocus,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: CustomTextField(
-                              label: 'Marcas en las Orejas',
-                              hint: 'Ej. Muesca en V oreja derecha / Tatuaje',
-                              controller: _hierroOrejasCtrl,
-                              focusNode: _hierroOrejasFocus,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: CustomTextField(
-                              label: 'Color / Tipo de Marca',
-                              hint: 'Ej. Hierro candente / Nitrógeno blanco',
-                              controller: _hierroColorCtrl,
-                              focusNode: _hierroColorFocus,
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                    return Column(
+          Column(
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 680;
+                  if (isWide) {
+                    return Row(
                       children: [
-                        CustomTextField(
-                          label: 'Ubicación en el Cuerpo',
-                          hint: 'Ej. Pierna derecha / Paleta izquierda',
-                          controller: _hierroUbicacionCtrl,
-                          focusNode: _hierroUbicacionFocus,
+                        Expanded(
+                          child: CustomTextField(
+                            label: 'Ubicación en el Cuerpo',
+                            hint: 'Ej. Pierna derecha / Paleta izquierda',
+                            controller: _hierroUbicacionCtrl,
+                            focusNode: _hierroUbicacionFocus,
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          label: 'Marcas en las Orejas',
-                          hint: 'Ej. Muesca en V oreja derecha / Tatuaje',
-                          controller: _hierroOrejasCtrl,
-                          focusNode: _hierroOrejasFocus,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: CustomTextField(
+                            label: 'Marcas en las Orejas',
+                            hint: 'Ej. Muesca en V oreja derecha / Tatuaje',
+                            controller: _hierroOrejasCtrl,
+                            focusNode: _hierroOrejasFocus,
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          label: 'Color / Tipo de Marca',
-                          hint: 'Ej. Hierro candente / Nitrógeno blanco',
-                          controller: _hierroColorCtrl,
-                          focusNode: _hierroColorFocus,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: CustomTextField(
+                            label: 'Color / Tipo de Marca',
+                            hint: 'Ej. Hierro candente / Nitrógeno blanco',
+                            controller: _hierroColorCtrl,
+                            focusNode: _hierroColorFocus,
+                          ),
                         ),
                       ],
                     );
-                  },
-                ),
-                const SizedBox(height: 12),
-                CustomTextField(
-                  label: 'Observaciones del Hierro',
-                  hint:
-                      'Iniciales o figura del hierro criador / propietario anterior',
-                  controller: _hierroObsCtrl,
-                  focusNode: _hierroObsFocus,
-                ),
-              ],
-            ),
+                  }
+                  return Column(
+                    children: [
+                      CustomTextField(
+                        label: 'Ubicación en el Cuerpo',
+                        hint: 'Ej. Pierna derecha / Paleta izquierda',
+                        controller: _hierroUbicacionCtrl,
+                        focusNode: _hierroUbicacionFocus,
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextField(
+                        label: 'Marcas en las Orejas',
+                        hint: 'Ej. Muesca en V oreja derecha / Tatuaje',
+                        controller: _hierroOrejasCtrl,
+                        focusNode: _hierroOrejasFocus,
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextField(
+                        label: 'Color / Tipo de Marca',
+                        hint: 'Ej. Hierro candente / Nitrógeno blanco',
+                        controller: _hierroColorCtrl,
+                        focusNode: _hierroColorFocus,
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                label: 'Observaciones del Hierro',
+                hint:
+                    'Iniciales o figura del hierro criador / propietario anterior',
+                controller: _hierroObsCtrl,
+                focusNode: _hierroObsFocus,
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
           // SECCIÓN 5: OBSERVACIONES Y FOTOGRAFÍAS
-          _FormSectionCard(
-            title: '5. Observaciones y Registro Fotográfico',
-            icon: Icons.camera_enhance_outlined,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CustomTextField(
-                  label: 'Observaciones Sanitarias o Productivas Iniciales',
-                  hint:
-                      'Condición corporal al ingreso, temperamento, aplomos, historial vacunal...',
-                  controller: _observacionesCtrl,
-                  focusNode: _observacionesFocus,
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                if (_fotosExistentes.isNotEmpty) ...[
-                  const Text(
-                    'Fotografías Actuales Guardadas',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      for (int i = 0; i < _fotosExistentes.length; i++)
-                        Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                _fotosExistentes[i],
-                                width: 96,
-                                height: 96,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Container(
-                                  width: 96,
-                                  height: 96,
-                                  color: Colors.grey[200],
-                                  child: const Icon(
-                                    Icons.broken_image,
-                                    size: 28,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _fotosExistentes.removeAt(i);
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 14,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                ],
-                PhotoUploaderWidget(
-                  label: _fotosExistentes.isNotEmpty
-                      ? 'Añadir Nuevas Fotografías'
-                      : 'Fotografías del Animal (Máx. 3)',
-                  photos: _fotos,
-                  maxPhotos: (3 - _fotosExistentes.length).clamp(0, 3),
-                  isUploading: _isUploadingPhotos,
-                  uploadProgress: _uploadProgress,
-                  uploadStatusText: _uploadStatus,
-                  onPhotoAdded: (photo) {
-                    if (_fotos.length + _fotosExistentes.length < 3) {
-                      setState(() => _fotos.add(photo));
-                    }
-                  },
-                  onPhotoRemoved: (index) {
-                    setState(() => _fotos.removeAt(index));
-                  },
-                ),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Wrap(
-                    alignment: WrapAlignment.end,
-                    spacing: 12,
-                    runSpacing: 10,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: _isSaving
-                            ? null
-                            : () {
-                                if (widget.animalAEditar != null) {
-                                  _cargarDatosAnimalAEditar(
-                                    widget.animalAEditar!,
-                                  );
-                                } else {
-                                  _limpiarFormulario();
-                                }
-                              },
-                        icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: Text(
-                          widget.animalAEditar != null
-                              ? 'Restablecer Valores'
-                              : 'Limpiar Expediente',
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textSecondary,
-                          side: const BorderSide(color: AppColors.border),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                        ),
-                      ),
-                      FilledButton.icon(
-                        onPressed: _isSaving ? null : _guardarAnimal,
-                        icon: _isSaving
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.check_circle_outline, size: 20),
-                        label: Text(
-                          _isSaving
-                              ? (widget.animalAEditar != null
-                                    ? 'Guardando Cambios...'
-                                    : 'Guardando Expediente...')
-                              : (widget.animalAEditar != null
-                                    ? 'Guardar Cambios'
-                                    : 'Guardar Expediente Animal'),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.botonPrincipal,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 26,
-                            vertical: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderBanner() {
-    final esEdicion = widget.animalAEditar != null;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary.withValues(alpha: 0.12),
-            AppColors.secondary.withValues(alpha: 0.06),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            child: Icon(
-              esEdicion ? Icons.edit_note_rounded : Icons.pets_outlined,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  esEdicion
-                      ? 'Modificación de Expediente Bovino · Arete ${widget.animalAEditar!.areteManejo}'
-                      : 'Apertura de Expediente Individual Bovino',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  esEdicion
-                      ? 'Actualice los datos biométricos, de genealogía, marcas o ubicación del animal ${widget.animalAEditar!.codigoSistema}.'
-                      : 'Trazabilidad genética Modo A, ubicación por finca y registro genealógico completo.',
-                  style: const TextStyle(
-                    fontSize: 12.5,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CustomTextField(
+                label: 'Observaciones Sanitarias o Productivas Iniciales',
+                hint:
+                    'Condición corporal al ingreso, temperamento, aplomos, historial vacunal...',
+                controller: _observacionesCtrl,
+                focusNode: _observacionesFocus,
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              if (_fotosExistentes.isNotEmpty) ...[
+                const Text(
+                  'Fotografías Actuales Guardadas',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    for (int i = 0; i < _fotosExistentes.length; i++)
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              _fotosExistentes[i],
+                              width: 96,
+                              height: 96,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                width: 96,
+                                height: 96,
+                                color: Colors.grey[200],
+                                child: const Icon(Icons.broken_image, size: 28),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _fotosExistentes.removeAt(i);
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 14),
               ],
-            ),
+              PhotoUploaderWidget(
+                label: _fotosExistentes.isNotEmpty
+                    ? 'Añadir Nuevas Fotografías'
+                    : 'Fotografías del Animal (Máx. 3)',
+                photos: _fotos,
+                maxPhotos: (3 - _fotosExistentes.length).clamp(0, 3),
+                isUploading: _isUploadingPhotos,
+                uploadProgress: _uploadProgress,
+                uploadStatusText: _uploadStatus,
+                onPhotoAdded: (photo) {
+                  if (_fotos.length + _fotosExistentes.length < 3) {
+                    setState(() => _fotos.add(photo));
+                  }
+                },
+                onPhotoRemoved: (index) {
+                  setState(() => _fotos.removeAt(index));
+                },
+              ),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 12,
+                  runSpacing: 10,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _isSaving
+                          ? null
+                          : () {
+                              if (widget.animalAEditar != null) {
+                                _cargarDatosAnimalAEditar(
+                                  widget.animalAEditar!,
+                                );
+                              } else {
+                                _limpiarFormulario();
+                              }
+                            },
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: Text(
+                        widget.animalAEditar != null
+                            ? 'Restablecer Valores'
+                            : 'Limpiar Expediente',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        side: const BorderSide(color: AppColors.border),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 14,
+                        ),
+                      ),
+                    ),
+                    FilledButton.icon(
+                      onPressed: _isSaving ? null : _guardarAnimal,
+                      icon: _isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.check_circle_outline, size: 20),
+                      label: Text(
+                        _isSaving
+                            ? (widget.animalAEditar != null
+                                  ? 'Guardando Cambios...'
+                                  : 'Guardando Expediente...')
+                            : (widget.animalAEditar != null
+                                  ? 'Guardar Cambios'
+                                  : 'Guardar Expediente Animal'),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.botonPrincipal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 26,
+                          vertical: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  void _refrescarCategoria() {
+    if (mounted) setState(() {});
+  }
+
+  Widget _filaCampos(List<Widget> campos) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (constraints.maxWidth >= 760) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < campos.length; i++) ...[
+              if (i > 0) const SizedBox(width: 14),
+              Expanded(child: campos[i]),
+            ],
+          ],
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < campos.length; i++) ...[
+            if (i > 0) const SizedBox(height: 14),
+            campos[i],
+          ],
+        ],
+      );
+    },
+  );
+
+  Widget _buildCategoriaAutomatica() {
+    final fecha = _leerFechaNacimiento(_fechaNacimientoCtrl.text);
+    final categoria = fecha == null
+        ? 'Por calcular'
+        : CategoriaRulesService.instance.determinarCategoria(
+            fechaNacimiento: fecha,
+            sexo: _sexo,
+            numeroPartos: _sexo == 'Hembra'
+                ? int.tryParse(_numeroPartosCtrl.text) ?? 0
+                : 0,
+            tipoExplotacion: _tipoExplotacion,
+          );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Categoría',
+          style: TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        InputDecorator(
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFFF3F4F6),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+          ),
+          child: Text(
+            categoria,
+            key: const ValueKey('categoria_calculada'),
+            style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Automática según Configuración',
+          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNumeroPartos() => CustomTextField.numeric(
+    label: 'Número de partos',
+    controller: _numeroPartosCtrl,
+    allowDecimals: false,
+    helperText: 'Determina la categoría de las hembras.',
+    validator: (value) {
+      final partos = int.tryParse(value ?? '');
+      if (partos == null || partos < 0) return 'Ingrese un número válido';
+      if (widget.sexoInicial == 'Hembra' && partos == 0) {
+        return 'La madre debe tener al menos un parto para registrarse como vaca';
+      }
+      return null;
+    },
+  );
+
   Widget _buildAreteManejoField() {
     return CustomTextField(
-      label: 'Arete de Manejo',
+      label: 'Código de animal',
       hint: 'Ej. 402-A',
       controller: _areteManejoCtrl,
       focusNode: _areteManejoFocus,
       isRequired: true,
       prefixIcon: const Icon(Icons.loyalty_outlined, size: 19),
-      validator: (v) => Validators.requerido(v, 'Ingrese el arete de manejo'),
+      validator: (v) => Validators.requerido(v, 'Ingrese el código de animal'),
     );
   }
 
   Widget _buildAreteOficialField() {
     return CustomTextField(
-      label: 'Arete Oficial / Chip RFID',
+      label: 'Arete oficial',
       hint: 'Ej. CO-055129834 (Opcional)',
       controller: _areteOficialCtrl,
       focusNode: _areteOficialFocus,
@@ -1597,8 +1481,8 @@ class _AnimalFormState extends State<AnimalForm> {
 
   Widget _buildNombreAliasField() {
     return CustomTextField(
-      label: 'Nombre o Alias',
-      hint: 'Ej. Marquesa / Sultán (si vacío, se usa el arete de manejo)',
+      label: 'Nombre',
+      hint: 'Ej. Marquesa / Sultán (si vacío, se usa el código de animal)',
       controller: _nombreAliasCtrl,
       focusNode: _nombreAliasFocus,
       prefixIcon: const Icon(Icons.edit_note_rounded, size: 20),
@@ -1669,120 +1553,118 @@ class _AnimalFormState extends State<AnimalForm> {
     }
   }
 
+  void _actualizarEdadDesdeFecha() {
+    if (_fechaNacimiento.isAfter(DateUtils.dateOnly(DateTime.now()))) {
+      _edadAniosCtrl.text = '0';
+      _edadMesesCtrl.text = '0';
+      _edadDiasCtrl.text = '0';
+      return;
+    }
+    final edad = EdadAnimal.desdeFecha(_fechaNacimiento, DateTime.now());
+    _edadAniosCtrl.text = edad.anios.toString();
+    _edadMesesCtrl.text = edad.meses.toString();
+    _edadDiasCtrl.text = edad.dias.toString();
+  }
+
   void _calcularNacimientoPorEdad() {
     final anios = int.tryParse(_edadAniosCtrl.text) ?? 0;
     final meses = int.tryParse(_edadMesesCtrl.text) ?? 0;
     final dias = int.tryParse(_edadDiasCtrl.text) ?? 0;
     if (anios < 0 ||
-        anios > 40 ||
+        anios > 150 ||
         meses < 0 ||
         meses > 11 ||
         dias < 0 ||
         dias > 30) {
       return;
     }
-    final hoy = DateTime.now();
-    final mes = DateTime(hoy.year - anios, hoy.month - meses);
-    final ultimoDia = DateTime(mes.year, mes.month + 1, 0).day;
     setState(() {
-      _fechaNacimiento = DateTime(
-        mes.year,
-        mes.month,
-        hoy.day > ultimoDia ? ultimoDia : hoy.day,
-      ).subtract(Duration(days: dias));
+      _fechaNacimiento = EdadAnimal(
+        anios,
+        meses,
+        dias,
+      ).fechaNacimiento(DateTime.now());
       _fechaNacimientoExacta = false;
       _fechaNacimientoCtrl.text = Formatters.formatearFecha(_fechaNacimiento);
     });
   }
 
-  Widget _buildFechaNacimientoSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Ingresar edad actual'),
-          value: _ingresarEdad,
-          onChanged: (value) => setState(() {
-            _ingresarEdad = value;
-            if (value) _fechaNacimientoExacta = false;
-          }),
+  Widget _buildEdadActual() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Edad actual',
+        style: TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
         ),
-        if (_ingresarEdad) ...[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final campo in [
-                ('Años', _edadAniosCtrl, 40),
-                ('Meses', _edadMesesCtrl, 11),
-                ('Días', _edadDiasCtrl, 30),
-              ])
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: CustomTextField.numeric(
-                      label: campo.$1,
-                      controller: campo.$2,
-                      allowDecimals: false,
-                      validator: (value) {
-                        final numero = int.tryParse(value ?? '');
-                        if ((value ?? '').isNotEmpty &&
-                            (numero == null ||
-                                numero < 0 ||
-                                numero > campo.$3)) {
-                          return 'Use 0–${campo.$3}';
-                        }
-                        if (campo.$1 == 'Años' &&
-                            [
-                              _edadAniosCtrl,
-                              _edadMesesCtrl,
-                              _edadDiasCtrl,
-                            ].every((c) => c.text.isEmpty)) {
-                          return 'Ingrese la edad';
-                        }
-                        return null;
-                      },
-                      onChanged: (_) => _calcularNacimientoPorEdad(),
-                    ),
-                  ),
+      ),
+      const SizedBox(height: 6),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final campo in [
+            ('Años', _edadAniosCtrl, 150),
+            ('Meses', _edadMesesCtrl, 11),
+            ('Días', _edadDiasCtrl, 30),
+          ])
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: CustomTextField.numeric(
+                  label: campo.$1,
+                  controller: campo.$2,
+                  allowDecimals: false,
+                  validator: (v) {
+                    final numero = int.tryParse(v ?? '');
+                    if (numero == null || numero < 0 || numero > campo.$3) {
+                      return 'Use 0–${campo.$3}';
+                    }
+                    return null;
+                  },
+                  onChanged: (_) => _calcularNacimientoPorEdad(),
                 ),
-            ],
-          ),
-          const SizedBox(height: 12),
+              ),
+            ),
         ],
-        CustomTextField(
-          label: 'Fecha de Nacimiento',
-          hint: 'dd/mm/aaaa',
-          controller: _fechaNacimientoCtrl,
-          readOnly: _ingresarEdad,
-          isRequired: true,
-          keyboardType: TextInputType.datetime,
-          validator: (value) => _leerFechaNacimiento(value) == null
-              ? 'Ingrese una fecha válida entre 1900 y hoy (dd/mm/aaaa)'
-              : null,
-          onChanged: (value) {
-            final fecha = _leerFechaNacimiento(value);
-            if (fecha != null) setState(() => _fechaNacimiento = fecha);
-          },
-          suffixIcon: _ingresarEdad
-              ? null
-              : IconButton(
-                  tooltip: 'Seleccionar en calendario',
-                  icon: const Icon(Icons.calendar_today_outlined),
-                  onPressed: () => _seleccionarFecha(
-                    initialDate: _fechaNacimiento,
-                    onSelected: (fecha) => setState(() {
-                      _fechaNacimiento = fecha;
-                      _fechaNacimientoCtrl.text = Formatters.formatearFecha(
-                        fecha,
-                      );
-                    }),
-                  ),
-                ),
-        ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+
+  Widget _buildFechaNacimientoSelector() => CustomTextField(
+    label: 'Fecha de Nacimiento',
+    hint: 'dd/mm/aaaa',
+    controller: _fechaNacimientoCtrl,
+    isRequired: true,
+    keyboardType: TextInputType.datetime,
+    headerTrailing: TextButton(
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(0, 20),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      onPressed: () =>
+          setState(() => _fechaNacimientoExacta = !_fechaNacimientoExacta),
+      child: Text(
+        _fechaNacimientoExacta ? 'Exacta' : 'Aproximada',
+        style: const TextStyle(fontSize: 11),
+      ),
+    ),
+    validator: (v) => _leerFechaNacimiento(v) == null
+        ? 'Ingrese una fecha válida entre 1900 y hoy (dd/mm/aaaa)'
+        : null,
+    onChanged: (value) {
+      final fecha = _leerFechaNacimiento(value);
+      setState(() {
+        if (fecha != null) {
+          _fechaNacimiento = fecha;
+          _fechaNacimientoExacta = true;
+          _actualizarEdadDesdeFecha();
+        }
+      });
+    },
+  );
 
   Widget _buildOrigenDropdown() {
     return CustomFormDropdown<String>(
@@ -1982,55 +1864,6 @@ class _AnimalFormState extends State<AnimalForm> {
   }
 }
 
-class _FormSectionCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Widget child;
-
-  const _FormSectionCard({
-    required this.title,
-    required this.icon,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _DateSelectorField extends StatelessWidget {
   final String label;
   final String valueText;
@@ -2175,12 +2008,14 @@ class _ParentescoSelectorCardState extends State<_ParentescoSelectorCard> {
                   children: [
                     Icon(widget.iconoRol, color: AppColors.primary, size: 20),
                     const SizedBox(width: 6),
-                    Text(
-                      widget.tituloRol,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                    Flexible(
+                      child: Text(
+                        widget.tituloRol,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
                   ],

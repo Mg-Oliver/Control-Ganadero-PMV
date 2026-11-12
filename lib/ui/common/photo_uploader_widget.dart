@@ -105,7 +105,10 @@ class PhotoUploaderWidget extends StatelessWidget {
                 ListTile(
                   leading: const CircleAvatar(
                     backgroundColor: Color(0xFFE8F5E9),
-                    child: Icon(Icons.photo_library_outlined, color: AppColors.primary),
+                    child: Icon(
+                      Icons.photo_library_outlined,
+                      color: AppColors.primary,
+                    ),
                   ),
                   title: const Text('Elegir desde Galería'),
                   subtitle: const Text('Archivos locales JPG, PNG o WEBP'),
@@ -117,7 +120,10 @@ class PhotoUploaderWidget extends StatelessWidget {
                 ListTile(
                   leading: const CircleAvatar(
                     backgroundColor: Color(0xFFE8F5E9),
-                    child: Icon(Icons.camera_alt_outlined, color: AppColors.primary),
+                    child: Icon(
+                      Icons.camera_alt_outlined,
+                      color: AppColors.primary,
+                    ),
                   ),
                   title: const Text('Tomar Fotografía'),
                   subtitle: const Text('Capturar directamente con cámara'),
@@ -182,26 +188,34 @@ class PhotoUploaderWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.photo_camera_back_outlined,
-                    size: 19,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.photo_camera_back_outlined,
+                      size: 19,
+                      color: AppColors.primary,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: photos.length >= maxPhotos
                       ? const Color(0xFFDCFCE7)
@@ -326,10 +340,7 @@ class _PhotoTile extends StatelessWidget {
               onTap: onPreview,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: Image.memory(
-                  photo.bytes,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.memory(photo.bytes, fit: BoxFit.cover),
               ),
             ),
           ),
@@ -365,11 +376,7 @@ class _PhotoTile extends StatelessWidget {
                     color: AppColors.error,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.close,
-                    size: 14,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.close, size: 14, color: Colors.white),
                 ),
               ),
             ),
@@ -378,4 +385,3 @@ class _PhotoTile extends StatelessWidget {
     );
   }
 }
-

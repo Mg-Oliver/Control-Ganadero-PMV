@@ -1,216 +1,192 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:bovino_mvp/data/models/finca_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+import 'package:bovino_mvp/core/services/categoria_rules_service.dart';
+import 'package:bovino_mvp/data/models/categoria_rule_model.dart';
+import 'package:bovino_mvp/ui/common/custom_text_field.dart';
+import 'package:bovino_mvp/ui/common/custom_form_dropdown.dart';
 import 'package:bovino_mvp/ui/screens/creacion/forms/animal_form.dart';
 import '../helpers/test_theme.dart';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const _fincaTest = FincaModel(
-  id: 'finca-test-001',
-  identificador: 'FNC-TST-01',
-  nombre: 'Finca Test',
-  estado: 'Activa',
-  fuentesAgua: [],
+Finder caja(String label) =>
+    find.byWidgetPredicate((w) => w is CustomTextField && w.label == label);
+Finder campo(String label) =>
+    find.descendant(of: caja(label), matching: find.byType(TextFormField));
+Finder lista(String label) => find.byWidgetPredicate(
+  (w) => w is CustomFormDropdown<String> && w.label == label,
 );
-
-Widget _wrap(List<FincaModel> fincas) => MaterialApp(
+Future<void> abrir(WidgetTester tester, {double ancho = 1000}) async {
+  tester.view.physicalSize = Size(ancho, 1200);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  await tester.pumpWidget(
+    MaterialApp(
       theme: testTheme,
-      home: Scaffold(
+      home: const Scaffold(
         body: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: AnimalForm(fincas: fincas),
+            padding: EdgeInsets.all(20),
+            child: AnimalForm(fincas: []),
           ),
         ),
       ),
-    );
-
-void _setWideViewport(WidgetTester tester) {
-  tester.view.physicalSize = const Size(1440, 900);
-  tester.view.devicePixelRatio = 1.0;
+    ),
+  );
+  await tester.pump();
 }
-
-void _resetViewport(WidgetTester tester) {
-  tester.view.resetPhysicalSize();
-  tester.view.resetDevicePixelRatio();
-}
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
 
 void main() {
-  // ─── 13.1 — Campo Código de Sistema eliminado ─────────────────────────────
-
-  group('13.1 — Campo Código de Sistema eliminado del formulario', () {
-    testWidgets('13.1.1 — no aparece texto "Código Sistema" en el formulario',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
-      await tester.pump();
-
-      expect(find.text('Código Sistema'), findsNothing);
-    });
-
-    testWidgets('13.1.1 — no aparece hint GAN-XXXXXX visible en el form',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
-      await tester.pump();
-
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    CategoriaRulesService.updateInstance(CategoriaRulesService());
+  });
+  testWidgets(
+    'tres filas iniciales en el orden solicitado, sin banner ni módulos',
+    (tester) async {
+      await abrir(tester);
+      final filas = [
+        [caja('Código de animal'), caja('Arete oficial'), caja('Nombre')],
+        [lista('Sexo'), caja('Fecha de Nacimiento'), find.text('Edad actual')],
+        [
+          find.text('Categoría'),
+          lista('Tipo de Explotación'),
+          lista('Origen del Animal'),
+        ],
+      ];
+      double anterior = -1;
+      for (final fila in filas) {
+        final y = tester.getTopLeft(fila.first).dy;
+        expect(y, greaterThan(anterior));
+        anterior = y;
+        for (final campo in fila.skip(1)) {
+          expect(tester.getTopLeft(campo).dy, closeTo(y, 1));
+        }
+        expect(
+          tester.getTopLeft(fila[1]).dx,
+          greaterThan(tester.getTopLeft(fila[0]).dx),
+        );
+        expect(
+          tester.getTopLeft(fila[2]).dx,
+          greaterThan(tester.getTopLeft(fila[1]).dx),
+        );
+      }
       expect(
-        find.textContaining('Generado automáticamente'),
+        find.text('Apertura de Expediente Individual Bovino'),
         findsNothing,
       );
-    });
-
-    testWidgets(
-        '13.1.1 — campo Arete de Manejo sigue presente y sigue siendo requerido',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
-      await tester.pump();
-
-      // findRichText: true es necesario porque CustomTextField usa RichText para la etiqueta
+      for (final titulo in [
+        '1. Identificación y Biometría',
+        '2. Genética y Linaje',
+        '3. Ubicación Actual y Manejo Productivo',
+        '4. Marcas de Hierro y Señales Físicas',
+        '5. Observaciones y Registro Fotográfico',
+      ]) {
+        expect(find.text(titulo), findsNothing);
+      }
       expect(
-        find.textContaining('Arete de Manejo', findRichText: true),
-        findsOneWidget,
+        tester.widget<CustomTextField>(caja('Código de animal')).isRequired,
+        isTrue,
       );
-    });
-  });
-
-  // ─── 13.2 — Autocompletado de Nombre/Alias con Arete ──────────────────────
-
-  group('13.2 — Hint de autocompletado de alias', () {
-    testWidgets('13.2.2 — hint del campo alias menciona el arete de manejo',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
-      await tester.pump();
-
-      // 'si vacío' es una frase única del nuevo hint de Nombre/Alias
       expect(
-        find.textContaining('si vacío'),
-        findsOneWidget,
+        tester.widget<CustomTextField>(caja('Fecha de Nacimiento')).suffixIcon,
+        isNull,
       );
-    });
-
-    testWidgets('13.2.2 — campo Nombre o Alias está presente', (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
-      await tester.pump();
-
-      // findRichText: true es necesario porque CustomTextField usa RichText para la etiqueta
-      expect(
-        find.textContaining('Nombre o Alias', findRichText: true),
-        findsOneWidget,
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'fecha y edad se recalculan en ambas direcciones sin calendario',
+    (tester) async {
+      await abrir(tester);
+      final hoy = DateTime.now();
+      final nacimiento = DateTime(hoy.year - 2, hoy.month, hoy.day);
+      await tester.enterText(
+        campo('Fecha de Nacimiento'),
+        DateFormat('dd/MM/yyyy').format(nacimiento),
       );
-    });
-  });
-
-  // ─── 13.3 — Sección unificada "Genética y Linaje" ─────────────────────────
-
-  group('13.3 — Sección unificada Genética y Linaje', () {
-    testWidgets('13.3.1 — aparece el título "2. Genética y Linaje"',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
       await tester.pump();
-
-      expect(find.text('2. Genética y Linaje'), findsOneWidget);
-    });
-
-    testWidgets(
-        '13.3.1 — NO aparece sección separada "Genealogía y Linaje Reproductivo"',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
-      await tester.pump();
-
+      expect(tester.widget<TextFormField>(campo('Años')).controller!.text, '2');
       expect(
-        find.text('5. Genealogía y Linaje Reproductivo'),
-        findsNothing,
+        tester.widget<TextFormField>(campo('Meses')).controller!.text,
+        '0',
       );
-    });
-
-    testWidgets(
-        '13.3.2 — sub-encabezado "Linaje y Progenitores" dentro de la sección fusionada',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
+      expect(tester.widget<TextFormField>(campo('Días')).controller!.text, '0');
+      await tester.enterText(campo('Días'), '10');
       await tester.pump();
-
-      expect(find.text('Linaje y Progenitores'), findsOneWidget);
-    });
-
-    testWidgets(
-        '13.3.2 — selector de Padre visible dentro del bloque fusionado',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
-      await tester.pump();
-
-      expect(find.textContaining('Padre (Reproductor'), findsOneWidget);
-    });
-
-    testWidgets(
-        '13.3.2 — selector de Madre visible dentro del bloque fusionado',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
-      await tester.pump();
-
-      expect(find.textContaining('Madre (Vaca'), findsOneWidget);
-    });
-
-    testWidgets('13.3.3 — sección Observaciones renumerada a 5', (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
-      await tester.pump();
-
       expect(
-          find.text('5. Observaciones y Registro Fotográfico'), findsOneWidget);
-      expect(
-          find.text('6. Observaciones y Registro Fotográfico'), findsNothing);
-    });
-
-    testWidgets('13.3.3 — total de secciones visibles es 5 (no 6)',
-        (tester) async {
-      _setWideViewport(tester);
-      addTearDown(() => _resetViewport(tester));
-
-      await tester.pumpWidget(_wrap([_fincaTest]));
+        tester
+            .widget<TextFormField>(campo('Fecha de Nacimiento'))
+            .controller!
+            .text,
+        DateFormat(
+          'dd/MM/yyyy',
+        ).format(nacimiento.subtract(const Duration(days: 10))),
+      );
+      expect(find.text('Aproximada'), findsOneWidget);
+      expect(find.byType(DatePickerDialog), findsNothing);
+    },
+  );
+  testWidgets(
+    'categoría cambia con fecha, partos y configuración sin permitir edición',
+    (tester) async {
+      await abrir(tester);
+      final hoy = DateTime.now();
+      await tester.enterText(
+        campo('Fecha de Nacimiento'),
+        DateFormat('dd/MM/yyyy').format(hoy),
+      );
       await tester.pump();
-
-      // Las 5 secciones esperadas
-      expect(find.text('1. Identificación y Biometría'), findsOneWidget);
-      expect(find.text('2. Genética y Linaje'), findsOneWidget);
-      expect(find.text('3. Ubicación Actual y Manejo Productivo'), findsOneWidget);
-      expect(find.text('4. Marcas de Hierro y Señales Físicas'), findsOneWidget);
+      Text categoria() => tester.widget<Text>(
+        find.byKey(const ValueKey('categoria_calculada')),
+      );
+      expect(categoria().data, 'Ternera');
+      await tester.enterText(
+        campo('Fecha de Nacimiento'),
+        DateFormat(
+          'dd/MM/yyyy',
+        ).format(DateTime(hoy.year - 2, hoy.month, hoy.day)),
+      );
+      await tester.pump();
+      expect(categoria().data, 'Novilla');
+      await tester.enterText(campo('Número de partos'), '1');
+      await tester.pump();
+      expect(categoria().data, 'Vaca');
+      CategoriaRulesService.updateInstance(
+        CategoriaRulesService(const [
+          CategoriaRuleModel(
+            sexo: 'Hembra',
+            edadMinimoMeses: 0,
+            edadMaximoMeses: -1,
+            categoria: 'Categoría personalizada',
+          ),
+        ]),
+      );
+      await tester.pump();
+      expect(categoria().data, 'Categoría personalizada');
+      await tester.enterText(campo('Fecha de Nacimiento'), '31/02/2024');
+      await tester.pump();
+      expect(categoria().data, 'Por calcular');
+    },
+  );
+  testWidgets(
+    'en pantalla estrecha se apilan campos y se conserva el resto del registro',
+    (tester) async {
+      await abrir(tester, ancho: 390);
       expect(
-          find.text('5. Observaciones y Registro Fotográfico'), findsOneWidget);
-    });
-  });
+        tester.getTopLeft(caja('Arete oficial')).dy,
+        greaterThan(tester.getTopLeft(caja('Código de animal')).dy),
+      );
+      for (final label in [
+        'Padre (Reproductor / Toro)',
+        'Madre (Vaca / Donadora)',
+        'Observaciones Sanitarias o Productivas Iniciales',
+        'Fotografías del Animal (Máx. 3)',
+      ]) {
+        expect(find.text(label, findRichText: true), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

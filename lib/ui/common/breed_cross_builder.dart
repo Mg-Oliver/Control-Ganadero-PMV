@@ -36,10 +36,7 @@ class _CrossRowEntry {
   String? razaNombre;
   String fraccion;
 
-  _CrossRowEntry({
-    this.razaNombre,
-    this.fraccion = '1/2',
-  });
+  _CrossRowEntry({this.razaNombre, this.fraccion = '1/2'});
 }
 
 class BreedCrossBuilder extends StatefulWidget {
@@ -135,10 +132,12 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
           .where((f) => f.razaNombre != null && f.razaNombre!.trim().isNotEmpty)
           .toList();
       final composicion = validas
-          .map((f) => <String, String>{
-                'raza': f.razaNombre!,
-                'fraccion': f.fraccion,
-              })
+          .map(
+            (f) => <String, String>{
+              'raza': f.razaNombre!,
+              'fraccion': f.fraccion,
+            },
+          )
           .toList();
       final etiqueta = _generarEtiquetaCruces(validas);
 
@@ -195,14 +194,20 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
               const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.biotech_outlined, color: AppColors.primary, size: 20),
+                  Icon(
+                    Icons.biotech_outlined,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                   SizedBox(width: 8),
-                  Text(
-                    'Composición Genética / Raza (Modo A) *',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Flexible(
+                    child: Text(
+                      'Composición Genética / Raza (Modo A) *',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ],
@@ -323,7 +328,10 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
           labelText: 'Raza Pura del Catálogo Oficial',
           filled: true,
           fillColor: Colors.white,
-          prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppColors.primary,
+          ),
           suffixIcon: const Icon(Icons.arrow_drop_down_rounded),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -349,8 +357,10 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
                     ),
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.secondary.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(12),
@@ -368,7 +378,10 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
               )
             : const Text(
                 'Buscar y seleccionar raza pura (Holstein, Brahman, Gyr...)',
-                style: TextStyle(fontSize: 13.5, color: AppColors.textSecondary),
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: AppColors.textSecondary,
+                ),
               ),
       ),
     );
@@ -442,7 +455,9 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
                             value: frac,
                             child: Text(
                               frac,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         )
@@ -566,7 +581,8 @@ class _RazaSearchDialogState extends State<_RazaSearchDialog> {
       final coincideAptitud =
           _filtroAptitud == null || r.aptitud == _filtroAptitud;
       final q = _query.trim().toLowerCase();
-      final coincideTexto = q.isEmpty ||
+      final coincideTexto =
+          q.isEmpty ||
           r.nombre.toLowerCase().contains(q) ||
           r.origen.toLowerCase().contains(q) ||
           r.aptitudLabel.toLowerCase().contains(q);
@@ -611,8 +627,10 @@ class _RazaSearchDialogState extends State<_RazaSearchDialog> {
                   prefixIcon: const Icon(Icons.search_rounded),
                   filled: true,
                   fillColor: const Color(0xFFF3F4F6),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide.none,
@@ -684,8 +702,9 @@ class _RazaSearchDialogState extends State<_RazaSearchDialog> {
                           return ListTile(
                             dense: true,
                             selected: selected,
-                            selectedTileColor:
-                                AppColors.primary.withValues(alpha: 0.08),
+                            selectedTileColor: AppColors.primary.withValues(
+                              alpha: 0.08,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
