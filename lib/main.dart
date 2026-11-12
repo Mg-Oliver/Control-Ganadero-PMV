@@ -99,6 +99,7 @@ class _MainWorkspaceShellState extends State<MainWorkspaceShell> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => CreacionScreen(
+          inventarioController: _inventarioController,
           showAppBar: true,
           initialTab: tab,
           onFincaCreatedGlobal: _inventarioController.registrarFincaOptimista,

@@ -7,10 +7,13 @@ import '../../../data/services/fincas_service.dart';
 import 'forms/animal_form.dart';
 import 'forms/finca_form.dart';
 import 'forms/lote_form.dart';
+import '../../controllers/inventario_controller.dart';
+import '../inventario/inventario_screen.dart';
 
 enum ModuloCreacionTab { finca, lote, animal }
 
 class CreacionScreen extends StatefulWidget {
+  final InventarioController? inventarioController;
   final ModuloCreacionTab initialTab;
   final bool showAppBar;
   final ValueChanged<FincaModel>? onFincaCreatedGlobal;
@@ -19,6 +22,7 @@ class CreacionScreen extends StatefulWidget {
 
   const CreacionScreen({
     super.key,
+    this.inventarioController,
     this.initialTab = ModuloCreacionTab.finca,
     this.showAppBar = true,
     this.onFincaCreatedGlobal,
@@ -129,6 +133,21 @@ class _CreacionScreenState extends State<CreacionScreen> {
       }
     });
     widget.onLoteCreatedGlobal?.call(nuevoLote);
+  }
+
+  void _consultarInventario() {
+    FocusScope.of(context).unfocus();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: const Text('Inventario')),
+          body: InventarioScreen(
+            externalController: widget.inventarioController,
+            onVolverAlRegistro: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ),
+    );
   }
 
   void _handleAnimalCreated(AnimalModel nuevoAnimal) {
@@ -341,6 +360,7 @@ class _CreacionScreenState extends State<CreacionScreen> {
                         onLoteCreated: _handleLoteCreated,
                       ),
                       AnimalForm(
+                        onVerInventario: _consultarInventario,
                         fincas: _fincas,
                         isLoadingFincas: _loadingFincas,
                         newlyCreatedFinca: _newlyCreatedFinca,

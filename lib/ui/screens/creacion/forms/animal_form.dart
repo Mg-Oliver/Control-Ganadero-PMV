@@ -22,6 +22,7 @@ import '../../../../data/models/toro_donante_model.dart';
 import '../../../../data/services/toros_donantes_service.dart';
 
 class AnimalForm extends StatefulWidget {
+  final VoidCallback? onVerInventario;
   final String? sexoInicial;
   final String? fincaInicialId;
   final bool preguntarPertenencia;
@@ -41,6 +42,7 @@ class AnimalForm extends StatefulWidget {
   const AnimalForm({
     super.key,
     required this.fincas,
+    this.onVerInventario,
     this.sexoInicial,
     this.fincaInicialId,
     this.preguntarPertenencia = false,
@@ -257,10 +259,7 @@ class _AnimalFormState extends State<AnimalForm> {
       }
     }
 
-    _cargarDatosEnCascada(
-      a.fincaId,
-      preselectGenealogia: g,
-    );
+    _cargarDatosEnCascada(a.fincaId, preselectGenealogia: g);
   }
 
   Future<void> _cargarTorosDonantes() async {
@@ -488,6 +487,7 @@ class _AnimalFormState extends State<AnimalForm> {
               fincaInicialId: _selectedFincaId,
               sexoInicial: sexo,
               preguntarPertenencia: true,
+              onVerInventario: widget.onVerInventario,
               animalesService: _animalesService,
               torosDonantesService: _torosDonantesService,
               onAnimalCreated: (animal) => Navigator.of(context).pop(animal),
@@ -834,6 +834,17 @@ class _AnimalFormState extends State<AnimalForm> {
               onChanged: (value) => setState(() => _esExterno = !value),
             ),
 
+          if (widget.onVerInventario != null) ...[
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: widget.onVerInventario,
+                icon: const Icon(Icons.inventory_2_outlined),
+                label: const Text('Ver inventario'),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           _buildHeaderBanner(),
           const SizedBox(height: 16),
 
@@ -1887,7 +1898,6 @@ class _AnimalFormState extends State<AnimalForm> {
       },
     );
   }
-
 
   Widget _buildPotreroField() {
     return CustomTextField(

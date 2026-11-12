@@ -10,6 +10,7 @@ import 'widgets/entity_data_table.dart';
 import 'widgets/inventario_sidebar.dart';
 
 class InventarioScreen extends StatefulWidget {
+  final VoidCallback? onVolverAlRegistro;
   final InventarioController? externalController;
   final VoidCallback? onGoToCreacion;
   final VoidCallback? onGoToCrearFinca;
@@ -18,6 +19,7 @@ class InventarioScreen extends StatefulWidget {
   const InventarioScreen({
     super.key,
     this.externalController,
+    this.onVolverAlRegistro,
     this.onGoToCreacion,
     this.onGoToCrearFinca,
     this.onGoToCrearManga,
@@ -67,9 +69,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
   Future<void> _abrirSelectorColumnas() async {
     final resultado = await showDialog<Set<ColumnaTabla>>(
       context: context,
-      builder: (_) => _ColumnasSelectorDialog(
-        columnasActivas: _columnasVisibles,
-      ),
+      builder: (_) =>
+          _ColumnasSelectorDialog(columnasActivas: _columnasVisibles),
     );
     if (resultado != null && mounted) {
       setState(() => _columnasVisibles = resultado);
@@ -145,9 +146,32 @@ class _InventarioScreenState extends State<InventarioScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            if (widget.onVolverAlRegistro != null)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  16,
+                                  20,
+                                  0,
+                                ),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: FilledButton.icon(
+                                    onPressed: widget.onVolverAlRegistro,
+                                    icon: const Icon(Icons.arrow_back_rounded),
+                                    label: const Text('Volver al registro'),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: AppColors.botonPrincipal,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             _buildCentralHeader(isDesktop: isDesktop),
                             if (_controller.errorConexion != null)
-                              _buildConnectionBanner(_controller.errorConexion!),
+                              _buildConnectionBanner(
+                                _controller.errorConexion!,
+                              ),
                             if (_controller.isLoading)
                               const LinearProgressIndicator(
                                 minHeight: 3,
@@ -162,11 +186,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
                                   physics:
                                       const AlwaysScrollableScrollPhysics(),
                                   padding: const EdgeInsets.all(20),
-                                  child: _vistaActual ==
-                                          VistaInventario.tarjetas
-                                      ? EntityCardGrid(
-                                          controller: _controller,
-                                        )
+                                  child:
+                                      _vistaActual == VistaInventario.tarjetas
+                                      ? EntityCardGrid(controller: _controller)
                                       : EntityDataTable(
                                           controller: _controller,
                                           columnasAnimalesActivas:
@@ -292,7 +314,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
                         if (c.realtimeActivo) ...[
                           const SizedBox(width: 6),
                           const Tooltip(
-                            message: 'Sincronización Realtime activa con Supabase',
+                            message:
+                                'Sincronización Realtime activa con Supabase',
                             child: Icon(
                               Icons.bolt_rounded,
                               size: 17,
@@ -530,10 +553,7 @@ class _ColumnasSelectorDialogState extends State<_ColumnasSelectorDialog> {
                 final activa = _seleccionadas.contains(col);
                 return CheckboxListTile(
                   dense: true,
-                  title: Text(
-                    col.label,
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  title: Text(col.label, style: const TextStyle(fontSize: 13)),
                   subtitle: col.esAnclaje
                       ? const Text(
                           'Columna fija — siempre visible',
@@ -579,9 +599,7 @@ class _ColumnasSelectorDialogState extends State<_ColumnasSelectorDialog> {
             _seleccionadas.add(ColumnaTabla.arete);
             Navigator.of(context).pop(_seleccionadas);
           },
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primary,
-          ),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
           child: const Text('Aplicar'),
         ),
       ],
