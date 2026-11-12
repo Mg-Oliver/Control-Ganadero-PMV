@@ -102,7 +102,7 @@ class _InventarioSidebarState extends State<InventarioSidebar> {
                     _SeccionNavTile(
                       label: 'Animales',
                       icon: Icons.pets_outlined,
-                      count: c.allAnimales.length,
+                      count: c.allAnimales.where((a) => !a.esExterno).length,
                       selected: c.seccionActiva == InventarioSeccion.animales,
                       onTap: () => c.cambiarSeccion(InventarioSeccion.animales),
                     ),

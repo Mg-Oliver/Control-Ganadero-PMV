@@ -71,7 +71,9 @@ class AnimalesService {
       // Fallback seguro si el nombre del constraint FK varía en la instancia
       final rawAnimales = await _supabase
           .from('animales')
-          .select('*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)')
+          .select(
+            '*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)',
+          )
           .order('created_at', ascending: false);
       final rawGenealogias = await _supabase.from('genealogia').select();
 
@@ -134,7 +136,9 @@ class AnimalesService {
     final response = await _supabase
         .from('animales')
         .insert(animal.toJson(includeId: includeId, includeCodigo: false))
-        .select('*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)')
+        .select(
+          '*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)',
+        )
         .single();
 
     var nuevoAnimal = AnimalModel.fromJson(response);
@@ -178,17 +182,29 @@ class AnimalesService {
     json.remove('lotes');
     json.remove('genealogia');
 
-    await _supabase
-        .from('animales')
-        .update(json)
-        .eq('id', animal.id);
+    await _supabase.from('animales').update(json).eq('id', animal.id);
+
+    if (animal.genealogia != null) {
+      await _supabase
+          .from('genealogia')
+          .upsert(
+            animal.genealogia!
+                .copyWith(animalId: animal.id)
+                .toJson(includeId: false),
+            onConflict: 'animal_id',
+          );
+    }
 
     final response = await _supabase
         .from('animales')
-        .select('*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)')
+        .select(
+          '*, fincas(id, nombre, identificador), lotes(id, nombre, identificador)',
+        )
         .eq('id', animal.id)
         .single();
 
-    return AnimalModel.fromJson(response);
+    return AnimalModel.fromJson(
+      response,
+    ).copyWith(genealogia: animal.genealogia);
   }
 }

@@ -8,19 +8,13 @@ import 'cards/lote_card.dart';
 class EntityCardGrid extends StatefulWidget {
   final InventarioController controller;
 
-  const EntityCardGrid({
-    super.key,
-    required this.controller,
-  });
+  const EntityCardGrid({super.key, required this.controller});
 
   @override
   State<EntityCardGrid> createState() => _EntityCardGridState();
 }
 
 class _EntityCardGridState extends State<EntityCardGrid> {
-  bool _mostrarTodas = false;
-  static const int _limiteVistaRapida = 6;
-
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
@@ -58,22 +52,6 @@ class _EntityCardGridState extends State<EntityCardGrid> {
                 ),
               ],
             ),
-            if (c.totalResultadosCoincidentes > _limiteVistaRapida)
-              TextButton.icon(
-                onPressed: () =>
-                    setState(() => _mostrarTodas = !_mostrarTodas),
-                icon: Icon(
-                  _mostrarTodas
-                      ? Icons.unfold_less_rounded
-                      : Icons.unfold_more_rounded,
-                  size: 17,
-                ),
-                label: Text(
-                  _mostrarTodas
-                      ? 'Contraer vista'
-                      : 'Ver las ${c.totalResultadosCoincidentes} tarjetas',
-                ),
-              ),
           ],
         ),
         const SizedBox(height: 10),
@@ -90,14 +68,11 @@ class _EntityCardGridState extends State<EntityCardGrid> {
               final itemWidth = (maxW - (spacing * (cols - 1))) / cols;
 
               final widgets = _construirTarjetasActivas(c);
-              final mostradas = _mostrarTodas
-                  ? widgets
-                  : widgets.take(_limiteVistaRapida).toList();
 
               return Wrap(
                 spacing: spacing,
                 runSpacing: spacing,
-                children: mostradas
+                children: widgets
                     .map((card) => SizedBox(width: itemWidth, child: card))
                     .toList(),
               );
@@ -180,7 +155,7 @@ class _EntityCardGridState extends State<EntityCardGrid> {
         final gdpProm = lista.isEmpty
             ? 0.0
             : lista.fold<double>(0.0, (s, l) => s + l.metaGananciaPesoDiaria) /
-                lista.length;
+                  lista.length;
         kpis = [
           (
             label: 'Mangas Filtradas',
@@ -210,7 +185,7 @@ class _EntityCardGridState extends State<EntityCardGrid> {
         final pesoProm = conPeso.isEmpty
             ? 0.0
             : conPeso.fold<double>(0.0, (s, a) => s + a.pesoActual!) /
-                conPeso.length;
+                  conPeso.length;
         kpis = [
           (
             label: 'Cabezas Filtradas',
@@ -226,7 +201,9 @@ class _EntityCardGridState extends State<EntityCardGrid> {
           ),
           (
             label: 'Peso Promedio',
-            value: conPeso.isEmpty ? 'N/D' : '${pesoProm.toStringAsFixed(1)} kg',
+            value: conPeso.isEmpty
+                ? 'N/D'
+                : '${pesoProm.toStringAsFixed(1)} kg',
             icon: Icons.monitor_weight_outlined,
             color: AppColors.secondary,
           ),
@@ -253,8 +230,10 @@ class _EntityCardGridState extends State<EntityCardGrid> {
                   side: const BorderSide(color: AppColors.border),
                 ),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
                       CircleAvatar(

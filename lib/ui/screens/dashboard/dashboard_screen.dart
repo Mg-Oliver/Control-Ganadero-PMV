@@ -6,6 +6,7 @@ import '../../../data/dev/seed_service.dart';
 import '../../../core/services/app_feedback.dart';
 import '../../controllers/inventario_controller.dart';
 import 'widgets/distribucion_poblacional_chart.dart';
+import 'widgets/metricas_ganaderas.dart';
 
 class DashboardScreen extends StatelessWidget {
   final InventarioController controller;
@@ -31,7 +32,7 @@ class DashboardScreen extends StatelessWidget {
         final todayEnd = todayStart.add(const Duration(days: 1));
 
         final animalesActivos = controller.allAnimales
-            .where((a) => a.estadoActual == 'Activo')
+            .where((a) => !a.esExterno && a.estadoActual == 'Activo')
             .toList();
         final distribucion = PoblacionAggregator.agregar(animalesActivos);
 
@@ -40,6 +41,7 @@ class DashboardScreen extends StatelessWidget {
 
         // Eventos del día: altas + salidas ocurridas hoy
         int eventosHoy = controller.allAnimales.where((a) {
+          if (a.esExterno) return false;
           final entrada = a.fechaEntrada;
           final salida = a.fechaSalida;
           final altaHoy =
@@ -90,6 +92,11 @@ class DashboardScreen extends StatelessWidget {
               DistribucionPoblacionalChart(
                 datos: distribucion,
                 onRegistrarAnimal: onRegistrarAnimal ?? onGoToExpediente,
+              ),
+              const SizedBox(height: 24),
+              MetricasGanaderas(
+                animales: controller.allAnimales,
+                nombreFinca: controller.nombreFincaPorId,
               ),
               const SizedBox(height: 32),
               _SectionTitle(

@@ -5,6 +5,7 @@ import '../../../core/services/app_feedback.dart';
 import '../../../data/dev/seed_service.dart';
 import '../../../ui/controllers/inventario_controller.dart';
 import 'configuracion_categorias_screen.dart';
+import 'animales_externos_screen.dart';
 
 class ConfiguracionScreen extends StatefulWidget {
   final InventarioController? inventarioController;
@@ -87,21 +88,35 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           const SizedBox(height: 12),
           _InfoCard(),
           const SizedBox(height: 28),
-          _SectionHeader(
-            icon: Icons.tune_rounded,
-            title: 'Opciones Generales',
-          ),
+          _SectionHeader(icon: Icons.tune_rounded, title: 'Opciones Generales'),
           const SizedBox(height: 12),
           _OpcionesCard(),
+          const SizedBox(height: 28),
+          Card(
+            child: ListTile(
+              leading: const Icon(
+                Icons.account_tree_outlined,
+                color: AppColors.primary,
+              ),
+              title: const Text('Animales externos'),
+              subtitle: const Text(
+                'Progenitores que no pertenecen a la finca y forman parte de la genealogía.',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const AnimalesExternosScreen(),
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 28),
           _SectionHeader(
             icon: Icons.category_outlined,
             title: 'Categorías Zootécnicas',
           ),
           const SizedBox(height: 12),
-          _CategoriasCard(
-            inventarioController: widget.inventarioController,
-          ),
+          _CategoriasCard(inventarioController: widget.inventarioController),
         ],
       ),
     );
@@ -216,13 +231,19 @@ class _ConexionCard extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              const Icon(Icons.dataset_outlined,
-                  size: 20, color: AppColors.textSecondary),
+              const Icon(
+                Icons.dataset_outlined,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 10),
               const Expanded(
                 child: Text(
                   'Datos Semilla Zootécnicos (3 fincas, 6 mangas, 28 animales)',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -316,25 +337,27 @@ class _OpcionesCard extends StatelessWidget {
       child: const Column(
         children: [
           ListTile(
-            leading: Icon(Icons.language_rounded,
-                color: AppColors.textSecondary),
+            leading: Icon(
+              Icons.language_rounded,
+              color: AppColors.textSecondary,
+            ),
             title: Text('Idioma', style: TextStyle(fontSize: 14)),
             trailing: Text(
               'Español (ES)',
-              style: TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
             onTap: null,
           ),
           Divider(height: 1, indent: 56),
           ListTile(
-            leading: Icon(Icons.dark_mode_outlined,
-                color: AppColors.textSecondary),
+            leading: Icon(
+              Icons.dark_mode_outlined,
+              color: AppColors.textSecondary,
+            ),
             title: Text('Tema', style: TextStyle(fontSize: 14)),
             trailing: Text(
               'Claro (por defecto)',
-              style: TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
             onTap: null,
           ),
@@ -359,8 +382,7 @@ class _CategoriasCard extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
-        leading:
-            const Icon(Icons.edit_note_rounded, color: AppColors.primary),
+        leading: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
         title: const Text(
           'Configurar Categorías',
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -369,8 +391,10 @@ class _CategoriasCard extends StatelessWidget {
           'Editar rangos de edad, agregar categorías personalizadas o restaurar valores de fábrica.',
           style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
-        trailing: const Icon(Icons.chevron_right_rounded,
-            color: AppColors.textSecondary),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: AppColors.textSecondary,
+        ),
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(

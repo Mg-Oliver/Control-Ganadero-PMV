@@ -73,6 +73,9 @@ class CustomFormDropdown<T> extends StatelessWidget {
           onChanged: (enabled && !isLoading) ? onChanged : null,
           validator: validator,
           isExpanded: true,
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          elevation: 2,
           icon: isLoading
               ? const SizedBox(
                   width: 18,

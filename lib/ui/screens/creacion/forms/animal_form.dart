@@ -17,12 +17,15 @@ import '../../../common/breed_cross_builder.dart';
 import '../../../common/custom_form_dropdown.dart';
 import '../../../common/custom_text_field.dart';
 import '../../../common/photo_uploader_widget.dart';
-import 'registrar_progenitor_modal.dart';
+import 'package:intl/intl.dart';
 import 'registrar_toro_donante_modal.dart';
 import '../../../../data/models/toro_donante_model.dart';
 import '../../../../data/services/toros_donantes_service.dart';
 
 class AnimalForm extends StatefulWidget {
+  final String? sexoInicial;
+  final String? fincaInicialId;
+  final bool preguntarPertenencia;
   final List<FincaModel> fincas;
   final bool isLoadingFincas;
   final FincaModel? newlyCreatedFinca;
@@ -39,6 +42,9 @@ class AnimalForm extends StatefulWidget {
   const AnimalForm({
     super.key,
     required this.fincas,
+    this.sexoInicial,
+    this.fincaInicialId,
+    this.preguntarPertenencia = false,
     this.isLoadingFincas = false,
     this.newlyCreatedFinca,
     this.newlyCreatedLote,
@@ -69,6 +75,7 @@ class _AnimalFormState extends State<AnimalForm> {
   final _areteOficialCtrl = TextEditingController();
   final _nombreAliasCtrl = TextEditingController();
   final _pesoActualCtrl = TextEditingController();
+  final _numeroPartosCtrl = TextEditingController(text: '0');
 
   final _areteManejoFocus = FocusNode();
   final _areteOficialFocus = FocusNode();
@@ -112,8 +119,16 @@ class _AnimalFormState extends State<AnimalForm> {
   // Estados reactivos del formulario
   String _sexo = 'Hembra';
   String _tipoExplotacion = 'Lecheria';
-  DateTime _fechaNacimiento = DateTime.now().subtract(const Duration(days: 180));
+  DateTime _fechaNacimiento = DateTime.now().subtract(
+    const Duration(days: 180),
+  );
   bool _fechaNacimientoExacta = true;
+  bool _ingresarEdad = false;
+  bool _esExterno = false;
+  final _fechaNacimientoCtrl = TextEditingController();
+  final _edadAniosCtrl = TextEditingController();
+  final _edadMesesCtrl = TextEditingController();
+  final _edadDiasCtrl = TextEditingController();
 
   String _origen = 'Nacido en la finca';
   String? _selectedFincaId;
@@ -139,13 +154,12 @@ class _AnimalFormState extends State<AnimalForm> {
   bool _padreEsInterno = true;
   bool _padreEsIA = false;
   AnimalModel? _padreSeleccionado;
-  String _tipoPruebaPaterna = 'Sin confirmar';
+  String _tipoPruebaPaterna = 'Visual / Monta natural';
   ToroDonanteModel? _toroDonante;
   List<ToroDonanteModel> _torosDonantes = [];
 
   bool _madreEsInterna = true;
   AnimalModel? _madreSeleccionada;
-  String _tipoPruebaMaterna = 'Sin confirmar';
 
   // Fotos y progreso
   final List<SelectedPhoto> _fotos = [];
@@ -160,11 +174,13 @@ class _AnimalFormState extends State<AnimalForm> {
     _animalesService = widget.animalesService ?? AnimalesService();
     _torosDonantesService =
         widget.torosDonantesService ?? TorosDonantesService();
+    _sexo = widget.sexoInicial ?? _sexo;
+    _fechaNacimientoCtrl.text = Formatters.formatearFecha(_fechaNacimiento);
     _cargarTorosDonantes();
     if (widget.animalAEditar != null) {
       _cargarDatosAnimalAEditar(widget.animalAEditar!);
     } else if (widget.fincas.isNotEmpty) {
-      _selectedFincaId = widget.fincas.first.id;
+      _selectedFincaId = widget.fincaInicialId ?? widget.fincas.first.id;
       _cargarDatosEnCascada(_selectedFincaId!);
     }
   }
@@ -173,16 +189,19 @@ class _AnimalFormState extends State<AnimalForm> {
     _areteManejoCtrl.text = a.areteManejo;
     _areteOficialCtrl.text = a.areteOficial ?? '';
     _nombreAliasCtrl.text = a.nombreAlias ?? '';
-    _pesoActualCtrl.text =
-        a.pesoActual != null ? a.pesoActual!.toString() : '';
+    _pesoActualCtrl.text = a.pesoActual != null ? a.pesoActual!.toString() : '';
+    _numeroPartosCtrl.text = a.numeroPartos.toString();
     _sexo = a.sexo;
     _tipoExplotacion = a.tipoExplotacion;
+    _esExterno = a.esExterno;
     _fechaNacimiento = a.fechaNacimiento;
+    _fechaNacimientoCtrl.text = Formatters.formatearFecha(_fechaNacimiento);
     _fechaNacimientoExacta = a.fechaNacimientoExacta;
     _origen = a.origen;
     _origenOtroCtrl.text = a.origenOtroDetalle ?? '';
-    _precioCompraCtrl.text =
-        a.precioCompra != null ? a.precioCompra!.toString() : '';
+    _precioCompraCtrl.text = a.precioCompra != null
+        ? a.precioCompra!.toString()
+        : '';
     _selectedFincaId = a.fincaId;
     _selectedLoteId = a.loteId;
     _potreroCtrl.text = a.potreroActual ?? '';
@@ -225,8 +244,15 @@ class _AnimalFormState extends State<AnimalForm> {
         _padreEsIA = false;
         _padreExternoCtrl.text = g.padreExternoReferencia!;
       }
-      if (g.tipoPruebaPaterna != null) {
-        _tipoPruebaPaterna = g.tipoPruebaPaterna!;
+      _tipoPruebaPaterna =
+          g.donanteId != null || g.tipoPruebaPaterna == 'Inseminacion'
+          ? 'Inseminacion'
+          : g.tipoPruebaPaterna == 'Transferencia de embriones'
+          ? 'Transferencia de embriones'
+          : 'Visual / Monta natural';
+      if (_tipoPruebaPaterna == 'Inseminacion') {
+        _padreEsIA = true;
+        _padreEsInterno = false;
       }
 
       if (g.madreId != null) {
@@ -235,13 +261,13 @@ class _AnimalFormState extends State<AnimalForm> {
         _madreEsInterna = false;
         _madreExternaCtrl.text = g.madreExternaReferencia!;
       }
-      if (g.tipoPruebaMaterna != null) {
-        _tipoPruebaMaterna = g.tipoPruebaMaterna!;
-      }
     }
 
-    _cargarDatosEnCascada(a.fincaId,
-        preselectLoteId: a.loteId, preselectGenealogia: g);
+    _cargarDatosEnCascada(
+      a.fincaId,
+      preselectLoteId: a.loteId,
+      preselectGenealogia: g,
+    );
   }
 
   Future<void> _cargarTorosDonantes() async {
@@ -252,10 +278,12 @@ class _AnimalFormState extends State<AnimalForm> {
           _torosDonantes = toros;
           if (widget.animalAEditar?.genealogia?.donanteId != null) {
             final donId = widget.animalAEditar!.genealogia!.donanteId!;
-            _toroDonante = toros.where((t) => t.id == donId).firstOrNull ??
+            _toroDonante =
+                toros.where((t) => t.id == donId).firstOrNull ??
                 (widget.animalAEditar!.genealogia!.donanteSnapshot != null
                     ? ToroDonanteModel.fromJson(
-                        widget.animalAEditar!.genealogia!.donanteSnapshot!)
+                        widget.animalAEditar!.genealogia!.donanteSnapshot!,
+                      )
                     : null);
           }
         });
@@ -302,20 +330,14 @@ class _AnimalFormState extends State<AnimalForm> {
         widget.newlyCreatedLote?.id != oldWidget.newlyCreatedLote?.id) {
       final nuevoLote = widget.newlyCreatedLote!;
       if (nuevoLote.fincaId == _selectedFincaId) {
-        _cargarDatosEnCascada(
-          nuevoLote.fincaId,
-          preselectLoteId: nuevoLote.id,
-        );
+        _cargarDatosEnCascada(nuevoLote.fincaId, preselectLoteId: nuevoLote.id);
       } else {
         setState(() {
           _selectedFincaId = nuevoLote.fincaId;
           _padreSeleccionado = null;
           _madreSeleccionada = null;
         });
-        _cargarDatosEnCascada(
-          nuevoLote.fincaId,
-          preselectLoteId: nuevoLote.id,
-        );
+        _cargarDatosEnCascada(nuevoLote.fincaId, preselectLoteId: nuevoLote.id);
       }
       return;
     }
@@ -328,10 +350,15 @@ class _AnimalFormState extends State<AnimalForm> {
 
   @override
   void dispose() {
+    _fechaNacimientoCtrl.dispose();
+    _edadAniosCtrl.dispose();
+    _edadMesesCtrl.dispose();
+    _edadDiasCtrl.dispose();
     _areteManejoCtrl.dispose();
     _areteOficialCtrl.dispose();
     _nombreAliasCtrl.dispose();
     _pesoActualCtrl.dispose();
+    _numeroPartosCtrl.dispose();
     _areteManejoFocus.dispose();
     _areteOficialFocus.dispose();
     _nombreAliasFocus.dispose();
@@ -375,7 +402,7 @@ class _AnimalFormState extends State<AnimalForm> {
     try {
       final resultados = await Future.wait([
         _lotesService.obtenerPorFinca(fincaId, soloActivos: true),
-        _animalesService.obtenerPorFinca(fincaId),
+        _animalesService.consultarInventarioRelacional(),
       ]);
 
       if (!mounted || _selectedFincaId != fincaId) return;
@@ -428,7 +455,7 @@ class _AnimalFormState extends State<AnimalForm> {
     final elegida = await showDatePicker(
       context: context,
       initialDate: initialDate.isAfter(hoy) ? hoy : initialDate,
-      firstDate: DateTime(1995),
+      firstDate: DateTime(1900),
       lastDate: hoy,
     );
     if (elegida != null) {
@@ -442,6 +469,7 @@ class _AnimalFormState extends State<AnimalForm> {
     _areteOficialCtrl.clear();
     _nombreAliasCtrl.clear();
     _pesoActualCtrl.clear();
+    _numeroPartosCtrl.text = '0';
     _origenOtroCtrl.clear();
     _precioCompraCtrl.clear();
     _potreroCtrl.clear();
@@ -455,10 +483,15 @@ class _AnimalFormState extends State<AnimalForm> {
     _observacionesCtrl.clear();
 
     setState(() {
-      _sexo = 'Hembra';
+      _sexo = widget.sexoInicial ?? 'Hembra';
       _tipoExplotacion = 'Lecheria';
       _fechaNacimiento = DateTime.now().subtract(const Duration(days: 180));
       _fechaNacimientoExacta = true;
+      _fechaNacimientoCtrl.text = Formatters.formatearFecha(_fechaNacimiento);
+      _ingresarEdad = false;
+      _edadAniosCtrl.clear();
+      _edadMesesCtrl.clear();
+      _edadDiasCtrl.clear();
       _origen = 'Nacido en la finca';
       _selectedLoteId = null;
       _estadoActual = 'Activo';
@@ -475,10 +508,9 @@ class _AnimalFormState extends State<AnimalForm> {
       _padreEsIA = false;
       _padreSeleccionado = null;
       _toroDonante = null;
-      _tipoPruebaPaterna = 'Sin confirmar';
+      _tipoPruebaPaterna = 'Visual / Monta natural';
       _madreEsInterna = true;
       _madreSeleccionada = null;
-      _tipoPruebaMaterna = 'Sin confirmar';
       _fotos.clear();
       _uploadProgress = 0.0;
       _uploadStatus = null;
@@ -494,14 +526,24 @@ class _AnimalFormState extends State<AnimalForm> {
     required void Function(AnimalModel) onAnimalRegistrado,
   }) async {
     if (_selectedFincaId == null) return;
-    final finca = widget.fincas.where((f) => f.id == _selectedFincaId).firstOrNull;
-    final resultado = await RegistrarProgenitorModal.mostrar(
-      context,
-      sexo: sexo,
-      tituloRol: tituloRol,
-      fincaId: _selectedFincaId!,
-      fincaNombre: finca?.nombre ?? '',
-      animalesService: _animalesService,
+    final resultado = await Navigator.of(context).push<AnimalModel>(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: Text('Registrar $tituloRol')),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: AnimalForm(
+              fincas: widget.fincas,
+              fincaInicialId: _selectedFincaId,
+              sexoInicial: sexo,
+              preguntarPertenencia: true,
+              animalesService: _animalesService,
+              torosDonantesService: _torosDonantesService,
+              onAnimalCreated: (animal) => Navigator.of(context).pop(animal),
+            ),
+          ),
+        ),
+      ),
     );
     if (resultado != null && mounted) {
       onAnimalRegistrado(resultado);
@@ -584,8 +626,9 @@ class _AnimalFormState extends State<AnimalForm> {
       }
 
       final pesoTexto = _pesoActualCtrl.text.trim().replaceAll(',', '.');
-      final pesoActual =
-          pesoTexto.isNotEmpty ? double.tryParse(pesoTexto) : null;
+      final pesoActual = pesoTexto.isNotEmpty
+          ? double.tryParse(pesoTexto)
+          : null;
 
       final precioTexto = _precioCompraCtrl.text.trim().replaceAll(',', '.');
       final precioCompra = (_esOrigenComprado && precioTexto.isNotEmpty)
@@ -601,6 +644,7 @@ class _AnimalFormState extends State<AnimalForm> {
 
       if (_padreEsInterno && _padreSeleccionado != null) {
         final valPadre = GenealogiaValidator.validarProgenitor(
+          animalId: widget.animalAEditar?.id,
           proposedParentId: _padreSeleccionado!.id,
           rol: 'padre',
           todosLosAnimales: _animalesDeFinca,
@@ -618,6 +662,7 @@ class _AnimalFormState extends State<AnimalForm> {
 
       if (_madreEsInterna && _madreSeleccionada != null) {
         final valMadre = GenealogiaValidator.validarProgenitor(
+          animalId: widget.animalAEditar?.id,
           proposedParentId: _madreSeleccionada!.id,
           rol: 'madre',
           todosLosAnimales: _animalesDeFinca,
@@ -635,13 +680,13 @@ class _AnimalFormState extends State<AnimalForm> {
 
       final ubicacionAjustada =
           PredioConsistencyHelper.procesarUbicacionPorEstado(
-        estadoActual: _estadoActual,
-        loteIdOriginal: _selectedLoteId,
-        potreroOriginal: _potreroCtrl.text.trim().isNotEmpty
-            ? _potreroCtrl.text.trim()
-            : null,
-        fechaSalidaOriginal: _esDeBaja ? _fechaSalida : null,
-      );
+            estadoActual: _estadoActual,
+            loteIdOriginal: _selectedLoteId,
+            potreroOriginal: _potreroCtrl.text.trim().isNotEmpty
+                ? _potreroCtrl.text.trim()
+                : null,
+            fechaSalidaOriginal: _esDeBaja ? _fechaSalida : null,
+          );
 
       var obsFinal = _observacionesCtrl.text.trim();
       if (_estadoActual == 'Vendido' &&
@@ -653,6 +698,7 @@ class _AnimalFormState extends State<AnimalForm> {
       }
 
       final animal = AnimalModel(
+        esExterno: _esExterno,
         id: animalId,
         codigoSistema: '', // Generado por trigger trg_generar_codigo_animal
         areteManejo: _areteManejoCtrl.text.trim(),
@@ -663,6 +709,9 @@ class _AnimalFormState extends State<AnimalForm> {
             ? _nombreAliasCtrl.text.trim()
             : _areteManejoCtrl.text.trim(),
         sexo: _sexo,
+        numeroPartos: _sexo == 'Hembra'
+            ? int.tryParse(_numeroPartosCtrl.text) ?? 0
+            : 0,
         pesoActual: pesoActual,
         esRazaPura: _breedSelection.esRazaPura,
         razaPuraNombre: _breedSelection.razaPuraNombre,
@@ -676,8 +725,8 @@ class _AnimalFormState extends State<AnimalForm> {
             ? _origenOtroCtrl.text.trim()
             : null,
         fincaId: _selectedFincaId!,
-        potreroActual: ubicacionAjustada.potreroActual,
-        loteId: ubicacionAjustada.loteId,
+        potreroActual: _esExterno ? null : ubicacionAjustada.potreroActual,
+        loteId: _esExterno ? null : ubicacionAjustada.loteId,
         estadoActual: _estadoActual,
         fechaEntrada: _fechaEntrada,
         precioCompra: precioCompra,
@@ -690,25 +739,29 @@ class _AnimalFormState extends State<AnimalForm> {
       final genealogia = GenealogiaModel(
         id: '',
         animalId: animalId,
-        padreId: (_padreEsInterno && !_padreEsIA) ? _padreSeleccionado?.id : null,
-        padreExternoReferencia: (!_padreEsInterno && !_padreEsIA) &&
+        padreId: (_padreEsInterno && !_padreEsIA)
+            ? _padreSeleccionado?.id
+            : null,
+        padreExternoReferencia:
+            (!_padreEsInterno && !_padreEsIA) &&
                 _padreExternoCtrl.text.trim().isNotEmpty
             ? _padreExternoCtrl.text.trim()
             : null,
-        tipoPruebaPaterna: _padreEsIA ? 'Inseminacion' : _tipoPruebaPaterna,
+        tipoPruebaPaterna: _tipoPruebaPaterna,
         donanteId: _padreEsIA ? _toroDonante?.id : null,
         donanteSnapshot: _padreEsIA ? _toroDonante?.toJson() : null,
         madreId: _madreEsInterna ? _madreSeleccionada?.id : null,
-        madreExternaReferencia: !_madreEsInterna &&
-                _madreExternaCtrl.text.trim().isNotEmpty
+        madreExternaReferencia:
+            !_madreEsInterna && _madreExternaCtrl.text.trim().isNotEmpty
             ? _madreExternaCtrl.text.trim()
             : null,
-        tipoPruebaMaterna: _tipoPruebaMaterna,
+        tipoPruebaMaterna: _tipoPruebaPaterna,
       );
 
       if (widget.animalAEditar != null) {
         final a = widget.animalAEditar!;
         final actualizado = AnimalModel(
+          esExterno: _esExterno,
           id: a.id,
           codigoSistema: a.codigoSistema,
           areteManejo: _areteManejoCtrl.text.trim(),
@@ -732,8 +785,8 @@ class _AnimalFormState extends State<AnimalForm> {
               ? _origenOtroCtrl.text.trim()
               : null,
           fincaId: _selectedFincaId!,
-          potreroActual: ubicacionAjustada.potreroActual,
-          loteId: ubicacionAjustada.loteId,
+          potreroActual: _esExterno ? null : ubicacionAjustada.potreroActual,
+          loteId: _esExterno ? null : ubicacionAjustada.loteId,
           estadoActual: _estadoActual,
           fechaEntrada: _fechaEntrada,
           precioCompra: precioCompra,
@@ -743,7 +796,9 @@ class _AnimalFormState extends State<AnimalForm> {
           fotos: [..._fotosExistentes, ...urlsFotos],
           createdAt: a.createdAt,
           updatedAt: DateTime.now(),
-          numeroPartos: a.numeroPartos,
+          numeroPartos: _sexo == 'Hembra'
+              ? int.tryParse(_numeroPartosCtrl.text) ?? 0
+              : 0,
           genealogia: genealogia,
         );
 
@@ -809,13 +864,25 @@ class _AnimalFormState extends State<AnimalForm> {
       sexo: 'Hembra',
       candidatos: _animalesDeFinca,
       todosLosAnimales: _animalesDeFinca,
-    );
+    ).where((a) => a.categoriaZootecnica == 'Vaca').toList();
 
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (widget.preguntarPertenencia)
+            SwitchListTile.adaptive(
+              title: const Text('¿Forma parte de la finca?'),
+              subtitle: Text(
+                _esExterno
+                    ? 'Se guardará en Configuración > Animales externos para su genealogía.'
+                    : 'Se añadirá al inventario de la finca.',
+              ),
+              value: !_esExterno,
+              onChanged: (value) => setState(() => _esExterno = !value),
+            ),
+
           _buildHeaderBanner(),
           const SizedBox(height: 16),
 
@@ -913,6 +980,31 @@ class _AnimalFormState extends State<AnimalForm> {
                   ),
                 ],
                 const SizedBox(height: 16),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: _fechaNacimientoExacta,
+                  activeTrackColor: AppColors.primary,
+                  title: const Text(
+                    '¿Fecha de nacimiento exacta conocida?',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    _fechaNacimientoExacta
+                        ? 'Registrada según parto documentado'
+                        : 'Estimada por cronometría dentaria / fenotipo (aproximada)',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  onChanged: (val) => setState(() {
+                    _fechaNacimientoExacta = val;
+                    if (val) _ingresarEdad = false;
+                  }),
+                ),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth > 680;
@@ -936,26 +1028,6 @@ class _AnimalFormState extends State<AnimalForm> {
                   },
                 ),
                 const SizedBox(height: 8),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  value: _fechaNacimientoExacta,
-                  activeTrackColor: AppColors.primary,
-                  title: const Text(
-                    '¿Fecha de nacimiento exacta conocida?',
-                    style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    _fechaNacimientoExacta
-                        ? 'Registrada según parto documentado'
-                        : 'Estimada por cronometría dentaria / fenotipo (aproximada)',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  onChanged: (val) =>
-                      setState(() => _fechaNacimientoExacta = val),
-                ),
                 const Divider(height: 20),
                 LayoutBuilder(
                   builder: (context, constraints) {
@@ -994,114 +1066,137 @@ class _AnimalFormState extends State<AnimalForm> {
                     );
                   },
                 ),
-              const Divider(height: 28),
-              const Row(
-                children: [
-                  Icon(Icons.account_tree_outlined,
-                      size: 18, color: AppColors.primary),
-                  SizedBox(width: 8),
-                  Text(
-                    'Linaje y Progenitores',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                const Divider(height: 28),
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.account_tree_outlined,
+                      size: 18,
+                      color: AppColors.primary,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _ParentescoSelectorCard(
-                tituloRol: 'Padre (Reproductor / Toro)',
-                iconoRol: Icons.male_rounded,
-                esInterno: _padreEsInterno,
-                esIA: _padreEsIA,
-                etiquetaToggleExterno: 'Externo / Pajuela',
-                candidatosInternos: machosValidos,
-                animalSeleccionado: _padreSeleccionado,
-                referenciaExternaCtrl: _padreExternoCtrl,
-                referenciaExternaFocus: _padreExternoFocus,
-                hintExterno:
-                    'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
-                tipoPrueba: _tipoPruebaPaterna,
-                fincaSeleccionada: _selectedFincaId != null,
-                toroDonante: _toroDonante,
-                todosDonantes: _torosDonantes,
-                onModoChanged: (interno) {
-                  setState(() => _padreEsInterno = interno);
-                },
-                onModoIAToggled: (esIA) {
-                  setState(() {
-                    _padreEsIA = esIA;
-                    if (esIA) _padreEsInterno = false;
-                  });
-                },
-                onAnimalSelected: (animal) {
-                  setState(() => _padreSeleccionado = animal);
-                },
-                onTipoPruebaChanged: (prueba) {
-                  if (prueba != null) {
-                    setState(() => _tipoPruebaPaterna = prueba);
-                  }
-                },
-                onToroDonante: (toro) {
-                  setState(() => _toroDonante = toro);
-                },
-                onRegistrarNuevo: () => _mostrarModalProgenitor(
-                  sexo: 'Macho',
-                  tituloRol: 'Padre (Reproductor / Toro)',
-                  onAnimalRegistrado: (nuevo) {
-                    setState(() {
-                      _animalesDeFinca = [nuevo, ..._animalesDeFinca];
-                      _padreSeleccionado = nuevo;
-                      _padreEsInterno = true;
-                    });
-                  },
+                    SizedBox(width: 8),
+                    Text(
+                      'Linaje y Progenitores',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
-                onRegistrarToroNuevo: _mostrarModalToroDonante,
-              ),
-              const SizedBox(height: 16),
-              _ParentescoSelectorCard(
-                tituloRol: 'Madre (Vaca / Donadora)',
-                iconoRol: Icons.female_rounded,
-                esInterno: _madreEsInterna,
-                etiquetaToggleExterno: 'Externa / Donadora',
-                candidatosInternos: hembrasValidas,
-                animalSeleccionado: _madreSeleccionada,
-                referenciaExternaCtrl: _madreExternaCtrl,
-                referenciaExternaFocus: _madreExternaFocus,
-                hintExterno: 'Ej. Donadora Embriones Hacienda El Vergel #405',
-                tipoPrueba: _tipoPruebaMaterna,
-                fincaSeleccionada: _selectedFincaId != null,
-                onModoChanged: (interna) {
-                  setState(() => _madreEsInterna = interna);
-                },
-                onAnimalSelected: (animal) {
-                  setState(() => _madreSeleccionada = animal);
-                },
-                onTipoPruebaChanged: (prueba) {
-                  if (prueba != null) {
-                    setState(() => _tipoPruebaMaterna = prueba);
-                  }
-                },
-                onRegistrarNuevo: () => _mostrarModalProgenitor(
-                  sexo: 'Hembra',
-                  tituloRol: 'Madre (Vaca / Donadora)',
-                  onAnimalRegistrado: (nuevo) {
+                const SizedBox(height: 12),
+                if (_sexo == 'Hembra') ...[
+                  CustomTextField.numeric(
+                    label: 'Número de partos',
+                    controller: _numeroPartosCtrl,
+                    allowDecimals: false,
+                    helperText:
+                        'Una hembra con al menos un parto se clasifica como vaca.',
+                    validator: (value) {
+                      final partos = int.tryParse(value ?? '');
+                      if (partos == null || partos < 0)
+                        return 'Ingrese un número válido';
+                      if (widget.sexoInicial == 'Hembra' && partos == 0)
+                        return 'La madre debe tener al menos un parto para registrarse como vaca';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                CustomFormDropdown<String>(
+                  label: 'Tipo de nacimiento',
+                  value: _tipoPruebaPaterna,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'Visual / Monta natural',
+                      child: Text('Monta Natural'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Inseminacion',
+                      child: Text('Inseminación artificial'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Transferencia de embriones',
+                      child: Text('Transferencia de embriones'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
                     setState(() {
-                      _animalesDeFinca = [nuevo, ..._animalesDeFinca];
-                      _madreSeleccionada = nuevo;
+                      _tipoPruebaPaterna = value;
+                      _padreEsIA = value == 'Inseminacion';
+                      _padreEsInterno = !_padreEsIA;
                       _madreEsInterna = true;
                     });
                   },
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                _ParentescoSelectorCard(
+                  tituloRol: 'Padre (Reproductor / Toro)',
+                  iconoRol: Icons.male_rounded,
+                  esInterno: _padreEsInterno,
+                  esIA: _padreEsIA,
+                  candidatosInternos: machosValidos,
+                  animalSeleccionado: _padreSeleccionado,
+                  referenciaExternaCtrl: _padreExternoCtrl,
+                  referenciaExternaFocus: _padreExternoFocus,
+                  hintExterno:
+                      'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
+                  fincaSeleccionada: _selectedFincaId != null,
+                  toroDonante: _toroDonante,
+                  todosDonantes: _torosDonantes,
+                  onAnimalSelected: (animal) {
+                    setState(() => _padreSeleccionado = animal);
+                  },
+                  onToroDonante: (toro) {
+                    setState(() => _toroDonante = toro);
+                  },
+                  onRegistrarNuevo: () => _mostrarModalProgenitor(
+                    sexo: 'Macho',
+                    tituloRol: 'Padre (Reproductor / Toro)',
+                    onAnimalRegistrado: (nuevo) {
+                      setState(() {
+                        _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                        _padreSeleccionado = nuevo;
+                        _padreEsInterno = true;
+                      });
+                    },
+                  ),
+                  onRegistrarToroNuevo: _mostrarModalToroDonante,
+                ),
+                const SizedBox(height: 16),
+                _ParentescoSelectorCard(
+                  tituloRol: 'Madre (Vaca / Donadora)',
+                  iconoRol: Icons.female_rounded,
+                  esInterno: _madreEsInterna,
+                  candidatosInternos: hembrasValidas,
+                  animalSeleccionado: _madreSeleccionada,
+                  referenciaExternaCtrl: _madreExternaCtrl,
+                  referenciaExternaFocus: _madreExternaFocus,
+                  hintExterno: 'Ej. Donadora Embriones Hacienda El Vergel #405',
+                  fincaSeleccionada: _selectedFincaId != null,
+                  onAnimalSelected: (animal) {
+                    setState(() => _madreSeleccionada = animal);
+                  },
+                  onRegistrarNuevo: () => _mostrarModalProgenitor(
+                    sexo: 'Hembra',
+                    tituloRol: 'Madre (Vaca / Donadora)',
+                    onAnimalRegistrado: (nuevo) {
+                      setState(() {
+                        _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                        _madreSeleccionada = nuevo;
+                        _madreEsInterna = true;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // SECCIÓN 3: UBICACIÓN EN CASCADA (FINCA -> LOTES)
+          // SECCIÓN 3: UBICACIÓN EN CASCADA (FINCA -> LOTES)
           _FormSectionCard(
             title: '3. Ubicación Actual y Manejo Productivo',
             icon: Icons.place_outlined,
@@ -1294,7 +1389,8 @@ class _AnimalFormState extends State<AnimalForm> {
                 const SizedBox(height: 12),
                 CustomTextField(
                   label: 'Observaciones del Hierro',
-                  hint: 'Iniciales o figura del hierro criador / propietario anterior',
+                  hint:
+                      'Iniciales o figura del hierro criador / propietario anterior',
                   controller: _hierroObsCtrl,
                   focusNode: _hierroObsFocus,
                 ),
@@ -1347,7 +1443,10 @@ class _AnimalFormState extends State<AnimalForm> {
                                   width: 96,
                                   height: 96,
                                   color: Colors.grey[200],
-                                  child: const Icon(Icons.broken_image, size: 28),
+                                  child: const Icon(
+                                    Icons.broken_image,
+                                    size: 28,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1412,15 +1511,18 @@ class _AnimalFormState extends State<AnimalForm> {
                             : () {
                                 if (widget.animalAEditar != null) {
                                   _cargarDatosAnimalAEditar(
-                                      widget.animalAEditar!);
+                                    widget.animalAEditar!,
+                                  );
                                 } else {
                                   _limpiarFormulario();
                                 }
                               },
                         icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: Text(widget.animalAEditar != null
-                            ? 'Restablecer Valores'
-                            : 'Limpiar Expediente'),
+                        label: Text(
+                          widget.animalAEditar != null
+                              ? 'Restablecer Valores'
+                              : 'Limpiar Expediente',
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textSecondary,
                           side: const BorderSide(color: AppColors.border),
@@ -1445,11 +1547,11 @@ class _AnimalFormState extends State<AnimalForm> {
                         label: Text(
                           _isSaving
                               ? (widget.animalAEditar != null
-                                  ? 'Guardando Cambios...'
-                                  : 'Guardando Expediente...')
+                                    ? 'Guardando Cambios...'
+                                    : 'Guardando Expediente...')
                               : (widget.animalAEditar != null
-                                  ? 'Guardar Cambios'
-                                  : 'Guardar Expediente Animal'),
+                                    ? 'Guardar Cambios'
+                                    : 'Guardar Expediente Animal'),
                         ),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.botonPrincipal,
@@ -1489,7 +1591,9 @@ class _AnimalFormState extends State<AnimalForm> {
           CircleAvatar(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            child: Icon(esEdicion ? Icons.edit_note_rounded : Icons.pets_outlined),
+            child: Icon(
+              esEdicion ? Icons.edit_note_rounded : Icons.pets_outlined,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1511,7 +1615,10 @@ class _AnimalFormState extends State<AnimalForm> {
                   esEdicion
                       ? 'Actualice los datos biométricos, de genealogía, marcas o ubicación del animal ${widget.animalAEditar!.codigoSistema}.'
                       : 'Trazabilidad genética Modo A, asignación en cascada Finca → Manga y registro genealógico completo.',
-                  style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -1556,6 +1663,7 @@ class _AnimalFormState extends State<AnimalForm> {
   Widget _buildSexoDropdown() {
     return CustomFormDropdown<String>(
       label: 'Sexo',
+      enabled: widget.sexoInicial == null,
       value: _sexo,
       isRequired: true,
       prefixIcon: Icon(
@@ -1594,7 +1702,9 @@ class _AnimalFormState extends State<AnimalForm> {
       items: const [
         DropdownMenuItem(value: 'Lecheria', child: Text('Lechería')),
         DropdownMenuItem(
-            value: 'Doble Proposito', child: Text('Doble Propósito')),
+          value: 'Doble Proposito',
+          child: Text('Doble Propósito'),
+        ),
         DropdownMenuItem(value: 'Cria', child: Text('Cría')),
         DropdownMenuItem(value: 'Ceba', child: Text('Ceba')),
       ],
@@ -1604,16 +1714,128 @@ class _AnimalFormState extends State<AnimalForm> {
     );
   }
 
+  DateTime? _leerFechaNacimiento(String? texto) {
+    try {
+      final fecha = DateFormat('dd/MM/yyyy').parseStrict(texto ?? '');
+      final hoy = DateUtils.dateOnly(DateTime.now());
+      return fecha.year >= 1900 && !fecha.isAfter(hoy) ? fecha : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _calcularNacimientoPorEdad() {
+    final anios = int.tryParse(_edadAniosCtrl.text) ?? 0;
+    final meses = int.tryParse(_edadMesesCtrl.text) ?? 0;
+    final dias = int.tryParse(_edadDiasCtrl.text) ?? 0;
+    if (anios < 0 ||
+        anios > 40 ||
+        meses < 0 ||
+        meses > 11 ||
+        dias < 0 ||
+        dias > 30) {
+      return;
+    }
+    final hoy = DateTime.now();
+    final mes = DateTime(hoy.year - anios, hoy.month - meses);
+    final ultimoDia = DateTime(mes.year, mes.month + 1, 0).day;
+    setState(() {
+      _fechaNacimiento = DateTime(
+        mes.year,
+        mes.month,
+        hoy.day > ultimoDia ? ultimoDia : hoy.day,
+      ).subtract(Duration(days: dias));
+      _fechaNacimientoExacta = false;
+      _fechaNacimientoCtrl.text = Formatters.formatearFecha(_fechaNacimiento);
+    });
+  }
+
   Widget _buildFechaNacimientoSelector() {
-    return _DateSelectorField(
-      label: 'Fecha de Nacimiento',
-      isRequired: true,
-      valueText: Formatters.formatearFecha(_fechaNacimiento),
-      badgeText: _fechaNacimientoExacta ? 'Exacta' : 'Aproximada',
-      onTap: () => _seleccionarFecha(
-        initialDate: _fechaNacimiento,
-        onSelected: (fecha) => setState(() => _fechaNacimiento = fecha),
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Ingresar edad actual'),
+          value: _ingresarEdad,
+          onChanged: (value) => setState(() {
+            _ingresarEdad = value;
+            if (value) _fechaNacimientoExacta = false;
+          }),
+        ),
+        if (_ingresarEdad) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final campo in [
+                ('Años', _edadAniosCtrl, 40),
+                ('Meses', _edadMesesCtrl, 11),
+                ('Días', _edadDiasCtrl, 30),
+              ])
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: CustomTextField.numeric(
+                      label: campo.$1,
+                      controller: campo.$2,
+                      allowDecimals: false,
+                      validator: (value) {
+                        final numero = int.tryParse(value ?? '');
+                        if ((value ?? '').isNotEmpty &&
+                            (numero == null ||
+                                numero < 0 ||
+                                numero > campo.$3)) {
+                          return 'Use 0–${campo.$3}';
+                        }
+                        if (campo.$1 == 'Años' &&
+                            [
+                              _edadAniosCtrl,
+                              _edadMesesCtrl,
+                              _edadDiasCtrl,
+                            ].every((c) => c.text.isEmpty)) {
+                          return 'Ingrese la edad';
+                        }
+                        return null;
+                      },
+                      onChanged: (_) => _calcularNacimientoPorEdad(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+        CustomTextField(
+          label: 'Fecha de Nacimiento',
+          hint: 'dd/mm/aaaa',
+          controller: _fechaNacimientoCtrl,
+          readOnly: _ingresarEdad,
+          isRequired: true,
+          keyboardType: TextInputType.datetime,
+          validator: (value) => _leerFechaNacimiento(value) == null
+              ? 'Ingrese una fecha válida entre 1900 y hoy (dd/mm/aaaa)'
+              : null,
+          onChanged: (value) {
+            final fecha = _leerFechaNacimiento(value);
+            if (fecha != null) setState(() => _fechaNacimiento = fecha);
+          },
+          suffixIcon: _ingresarEdad
+              ? null
+              : IconButton(
+                  tooltip: 'Seleccionar en calendario',
+                  icon: const Icon(Icons.calendar_today_outlined),
+                  onPressed: () => _seleccionarFecha(
+                    initialDate: _fechaNacimiento,
+                    onSelected: (fecha) => setState(() {
+                      _fechaNacimiento = fecha;
+                      _fechaNacimientoCtrl.text = Formatters.formatearFecha(
+                        fecha,
+                      );
+                    }),
+                  ),
+                ),
+        ),
+      ],
     );
   }
 
@@ -1632,7 +1854,10 @@ class _AnimalFormState extends State<AnimalForm> {
           value: 'Comprado en subasta',
           child: Text('Comprado en subasta / feria'),
         ),
-        DropdownMenuItem(value: 'Arriendo', child: Text('Arriendo / Al aumento')),
+        DropdownMenuItem(
+          value: 'Arriendo',
+          child: Text('Arriendo / Al aumento'),
+        ),
         DropdownMenuItem(value: 'Otro', child: Text('Otro origen')),
       ],
       onChanged: (val) {
@@ -1652,10 +1877,7 @@ class _AnimalFormState extends State<AnimalForm> {
       isRequired: true,
       validator: (val) {
         if (_origen == 'Otro') {
-          return Validators.requerido(
-            val,
-            'Especifique el detalle del origen',
-          );
+          return Validators.requerido(val, 'Especifique el detalle del origen');
         }
         return null;
       },
@@ -1701,7 +1923,7 @@ class _AnimalFormState extends State<AnimalForm> {
             TextButton.icon(
               onPressed: widget.onRequestCreateFinca,
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('+ Nueva'),
+              label: const Text('Nueva finca'),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 visualDensity: VisualDensity.compact,
@@ -1744,18 +1966,18 @@ class _AnimalFormState extends State<AnimalForm> {
       hint: _esDeBaja
           ? 'No aplica (animal dado de baja)'
           : (_selectedFincaId == null
-              ? 'Seleccione primero una finca'
-              : (_lotesDeFinca.isEmpty
-                  ? 'Sin mangas activas en esta finca'
-                  : 'Seleccione manga (Opcional)')),
+                ? 'Seleccione primero una finca'
+                : (_lotesDeFinca.isEmpty
+                      ? 'Sin mangas activas en esta finca'
+                      : 'Seleccione manga (Opcional)')),
       prefixIcon: const Icon(Icons.grid_view_outlined, size: 20),
       headerTrailing: (widget.onRequestCreateLote != null && !_esDeBaja)
           ? TextButton.icon(
               onPressed: () => widget.onRequestCreateLote!(_selectedFincaId),
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('+ Nueva Manga'),
+              label: const Text('Nueva manga'),
               style: TextButton.styleFrom(
-                foregroundColor: AppColors.secondary,
+                foregroundColor: AppColors.primary,
                 visualDensity: VisualDensity.compact,
               ),
             )
@@ -1910,14 +2132,12 @@ class _FormSectionCard extends StatelessWidget {
 class _DateSelectorField extends StatelessWidget {
   final String label;
   final String valueText;
-  final String? badgeText;
   final bool isRequired;
   final VoidCallback onTap;
 
   const _DateSelectorField({
     required this.label,
     required this.valueText,
-    this.badgeText,
     this.isRequired = false,
     required this.onTap,
   });
@@ -1976,23 +2196,6 @@ class _DateSelectorField extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (badgeText != null)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      badgeText!,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -2007,18 +2210,13 @@ class _ParentescoSelectorCard extends StatefulWidget {
   final IconData iconoRol;
   final bool esInterno;
   final bool esIA;
-  final String etiquetaToggleExterno;
   final List<AnimalModel> candidatosInternos;
   final AnimalModel? animalSeleccionado;
   final TextEditingController referenciaExternaCtrl;
   final FocusNode referenciaExternaFocus;
   final String hintExterno;
-  final String tipoPrueba;
   final bool fincaSeleccionada;
-  final ValueChanged<bool> onModoChanged;
-  final ValueChanged<bool>? onModoIAToggled;
   final ValueChanged<AnimalModel?> onAnimalSelected;
-  final ValueChanged<String?> onTipoPruebaChanged;
   final VoidCallback? onRegistrarNuevo;
   // IA fields
   final ToroDonanteModel? toroDonante;
@@ -2030,19 +2228,14 @@ class _ParentescoSelectorCard extends StatefulWidget {
     required this.tituloRol,
     required this.iconoRol,
     required this.esInterno,
-    required this.etiquetaToggleExterno,
     required this.candidatosInternos,
     required this.animalSeleccionado,
     required this.referenciaExternaCtrl,
     required this.referenciaExternaFocus,
     required this.hintExterno,
-    required this.tipoPrueba,
     required this.fincaSeleccionada,
-    required this.onModoChanged,
     required this.onAnimalSelected,
-    required this.onTipoPruebaChanged,
     this.esIA = false,
-    this.onModoIAToggled,
     this.onRegistrarNuevo,
     this.toroDonante,
     this.todosDonantes = const [],
@@ -2056,45 +2249,6 @@ class _ParentescoSelectorCard extends StatefulWidget {
 }
 
 class _ParentescoSelectorCardState extends State<_ParentescoSelectorCard> {
-  final _busquedaCtrl = TextEditingController();
-  final _busquedaFocus = FocusNode();
-  String _termino = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _busquedaFocus.addListener(_onFocusChange);
-  }
-
-  void _onFocusChange() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _busquedaFocus.removeListener(_onFocusChange);
-    _busquedaCtrl.dispose();
-    _busquedaFocus.dispose();
-    super.dispose();
-  }
-
-  List<AnimalModel> get _resultadosFiltrados {
-    final q = _termino.trim().toLowerCase();
-    if (q.isEmpty) {
-      return widget.candidatosInternos.take(5).toList();
-    }
-    return widget.candidatosInternos.where((a) {
-      final manejo = a.areteManejo.toLowerCase();
-      final oficial = (a.areteOficial ?? '').toLowerCase();
-      final alias = (a.nombreAlias ?? '').toLowerCase();
-      final codigo = a.codigoSistema.toLowerCase();
-      return manejo.contains(q) ||
-          oficial.contains(q) ||
-          alias.contains(q) ||
-          codigo.contains(q);
-    }).take(8).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -2106,354 +2260,108 @@ class _ParentescoSelectorCardState extends State<_ParentescoSelectorCard> {
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(widget.iconoRol, color: AppColors.primary, size: 20),
-                  const SizedBox(width: 6),
-                  Text(
-                    widget.tituloRol,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (widget.onModoIAToggled != null)
-                    SegmentedButton<String>(
-                      segments: [
-                        const ButtonSegment<String>(
-                          value: 'interno',
-                          label: Text('Hato'),
-                        ),
-                        ButtonSegment<String>(
-                          value: 'externo',
-                          label: Text(widget.etiquetaToggleExterno),
-                        ),
-                        const ButtonSegment<String>(
-                          value: 'ia',
-                          label: Text('IA'),
-                          icon: Icon(Icons.science_outlined, size: 14),
-                        ),
-                      ],
-                      selected: {
-                        widget.esIA
-                            ? 'ia'
-                            : (widget.esInterno ? 'interno' : 'externo')
-                      },
-                      onSelectionChanged: (sel) {
-                        final mode = sel.first;
-                        if (mode == 'ia') {
-                          widget.onModoIAToggled!(true);
-                          widget.onModoChanged(false);
-                        } else {
-                          widget.onModoIAToggled!(false);
-                          widget.onModoChanged(mode == 'interno');
-                        }
-                      },
-                      style: ButtonStyle(
-                        visualDensity: VisualDensity.compact,
-                        backgroundColor:
-                            WidgetStateProperty.resolveWith((states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return AppColors.primary;
-                          }
-                          return Colors.white;
-                        }),
-                        foregroundColor:
-                            WidgetStateProperty.resolveWith((states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return Colors.white;
-                          }
-                          return AppColors.textPrimary;
-                        }),
-                      ),
-                    )
-                  else
-                    SegmentedButton<bool>(
-                      segments: [
-                        const ButtonSegment<bool>(
-                          value: true,
-                          label: Text('Animal de la Finca'),
-                        ),
-                        ButtonSegment<bool>(
-                          value: false,
-                          label: Text(widget.etiquetaToggleExterno),
-                        ),
-                      ],
-                      selected: {widget.esInterno},
-                      onSelectionChanged: (sel) => widget.onModoChanged(sel.first),
-                      style: ButtonStyle(
-                        visualDensity: VisualDensity.compact,
-                        backgroundColor:
-                            WidgetStateProperty.resolveWith((states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return AppColors.primary;
-                          }
-                          return Colors.white;
-                        }),
-                        foregroundColor:
-                            WidgetStateProperty.resolveWith((states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return Colors.white;
-                          }
-                          return AppColors.textPrimary;
-                        }),
-                      ),
-                    ),
-                  if (widget.onRegistrarNuevo != null &&
-                      widget.fincaSeleccionada &&
-                      !widget.esIA)
-                    OutlinedButton.icon(
-                      onPressed: widget.onRegistrarNuevo,
-                      icon: const Icon(Icons.add_rounded, size: 15),
-                      label: const Text('Registrar'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        textStyle: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 620;
-              final selectorPrincipal = widget.esIA
-                  ? _buildSelectorIA()
-                  : (widget.esInterno
-                      ? _buildBuscadorInterno()
-                      : CustomTextField(
-                          label: 'Referencia o Código de Catálogo Externo',
-                          hint: widget.hintExterno,
-                          controller: widget.referenciaExternaCtrl,
-                          focusNode: widget.referenciaExternaFocus,
-                          prefixIcon:
-                              const Icon(Icons.science_outlined, size: 19),
-                        ));
-
-              final selectorPrueba = CustomFormDropdown<String>(
-                label: 'Tipo de Prueba / Respaldo',
-                value: widget.tipoPrueba,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'Sin confirmar',
-                    child: Text('Sin confirmar'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Visual / Monta natural',
-                    child: Text('Visual / Monta natural'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Inseminacion',
-                    child: Text('Inseminación Artificial'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'ADN',
-                    child: Text('Prueba Genética ADN'),
-                  ),
-                ],
-                onChanged: widget.onTipoPruebaChanged,
-              );
-
-              if (isWide) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(flex: 3, child: selectorPrincipal),
-                    const SizedBox(width: 14),
-                    Expanded(flex: 2, child: selectorPrueba),
+                    Icon(widget.iconoRol, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.tituloRol,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ],
-                );
-              }
-              return Column(
-                children: [
-                  selectorPrincipal,
-                  const SizedBox(height: 12),
-                  selectorPrueba,
-                ],
-              );
-            },
-          ),
-        ],
-      ),
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (widget.onRegistrarNuevo != null &&
+                        widget.fincaSeleccionada &&
+                        !widget.esIA)
+                      OutlinedButton.icon(
+                        onPressed: widget.onRegistrarNuevo,
+                        icon: const Icon(Icons.add_rounded, size: 15),
+                        label: const Text('Registrar'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          textStyle: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final selectorPrincipal = widget.esIA
+                    ? _buildSelectorIA()
+                    : (widget.esInterno
+                          ? _buildBuscadorInterno()
+                          : CustomTextField(
+                              label: 'Referencia o Código de Catálogo Externo',
+                              hint: widget.hintExterno,
+                              controller: widget.referenciaExternaCtrl,
+                              focusNode: widget.referenciaExternaFocus,
+                              prefixIcon: const Icon(
+                                Icons.science_outlined,
+                                size: 19,
+                              ),
+                            ));
+
+                return selectorPrincipal;
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildBuscadorInterno() {
-    if (!widget.fincaSeleccionada) {
-      return const Text(
-        'Seleccione una finca primero para buscar reproductores registrados.',
-        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-      );
-    }
-
-    if (widget.animalSeleccionado != null) {
-      final sel = widget.animalSeleccionado!;
-      final alias =
-          (sel.nombreAlias != null && sel.nombreAlias!.trim().isNotEmpty)
-              ? ' • "${sel.nombreAlias}"'
-              : '';
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8F5E9),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Arete ${sel.areteManejo}$alias (${sel.codigoSistema})',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.5,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    sel.razaEtiquetaDisplay,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              tooltip: 'Cambiar selección',
-              onPressed: () => widget.onAnimalSelected(null),
-              icon: const Icon(Icons.close, size: 18, color: AppColors.error),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final sugerencias = _resultadosFiltrados;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CustomTextField(
-          label: 'Buscar en la Finca (Arete Manejo, Oficial o Nombre)',
-          hint: widget.candidatosInternos.isEmpty
-              ? 'No hay ejemplares de este sexo registrados en la finca'
-              : 'Escribe arete o nombre para filtrar (${widget.candidatosInternos.length} disponibles)...',
-          controller: _busquedaCtrl,
-          focusNode: _busquedaFocus,
-          enabled: widget.candidatosInternos.isNotEmpty,
-          prefixIcon: const Icon(Icons.search_rounded, size: 19),
-          onChanged: (val) => setState(() => _termino = val),
-        ),
-        if (widget.candidatosInternos.isNotEmpty &&
-            (_termino.trim().isNotEmpty || _busquedaFocus.hasFocus)) ...[
-          const SizedBox(height: 6),
-          Material(
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: const BorderSide(color: AppColors.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 170),
-              child: sugerencias.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text(
-                      'Sin coincidencias por arete o nombre en esta finca.',
-                      style:
-                          TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-                    ),
-                  )
-                : ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: sugerencias.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final item = sugerencias[index];
-                      final aliasTxt = (item.nombreAlias != null &&
-                              item.nombreAlias!.isNotEmpty)
-                          ? ' - ${item.nombreAlias}'
-                          : '';
-                      final oficialTxt = (item.areteOficial != null &&
-                              item.areteOficial!.isNotEmpty)
-                          ? ' | Oficial: ${item.areteOficial}'
-                          : '';
-                      return ListTile(
-                        dense: true,
-                        title: Text(
-                          'Arete: ${item.areteManejo}$aliasTxt',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
-                          '${item.codigoSistema} • ${item.razaEtiquetaDisplay}$oficialTxt',
-                          style: const TextStyle(fontSize: 11.5),
-                        ),
-                        trailing: const Icon(
-                          Icons.add_circle_outline,
-                          color: AppColors.primary,
-                          size: 18,
-                        ),
-                        onTap: () {
-                          _busquedaCtrl.clear();
-                          setState(() => _termino = '');
-                          widget.onAnimalSelected(item);
-                        },
-                      );
-                    },
-                  ),
+    return CustomFormDropdown<String>(
+      label: widget.iconoRol == Icons.female_rounded
+          ? 'Seleccionar madre (vaca)'
+          : 'Seleccionar padre',
+      value: widget.animalSeleccionado?.id,
+      enabled: widget.fincaSeleccionada,
+      hint: widget.candidatosInternos.isEmpty
+          ? 'Sin progenitores disponibles'
+          : 'Seleccione un progenitor',
+      items: [
+        const DropdownMenuItem<String>(value: '', child: Text('Sin asignar')),
+        ...widget.candidatosInternos.map(
+          (a) => DropdownMenuItem(
+            value: a.id,
+            child: Text(
+              '${a.areteManejo} · ${a.nombreAlias ?? a.codigoSistema}${a.esExterno ? " (Externo)" : ""}',
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        ] else if (widget.candidatosInternos.isNotEmpty) ...[
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: widget.candidatosInternos.take(4).map((item) {
-              return ActionChip(
-                visualDensity: VisualDensity.compact,
-                avatar: const Icon(Icons.pets, size: 14, color: AppColors.primary),
-                label: Text(
-                  '${item.areteManejo}${item.nombreAlias != null ? " (${item.nombreAlias})" : ""}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                onPressed: () => widget.onAnimalSelected(item),
-              );
-            }).toList(),
-          ),
-        ],
+        ),
       ],
+      onChanged: (id) => widget.onAnimalSelected(
+        widget.candidatosInternos.where((a) => a.id == id).firstOrNull,
+      ),
     );
   }
 
@@ -2476,8 +2384,11 @@ class _ParentescoSelectorCardState extends State<_ParentescoSelectorCard> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.science_outlined,
-                color: AppColors.primary, size: 20),
+            const Icon(
+              Icons.science_outlined,
+              color: AppColors.primary,
+              size: 20,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -2495,7 +2406,9 @@ class _ParentescoSelectorCardState extends State<_ParentescoSelectorCard> {
                     'Código pajuela: ${seleccionado.codigoPajuela}'
                     '${seleccionado.raza.isNotEmpty ? " · ${seleccionado.raza}" : ""}',
                     style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary),
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -2513,42 +2426,23 @@ class _ParentescoSelectorCardState extends State<_ParentescoSelectorCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InputDecorator(
-          decoration: InputDecoration(
-            labelText: 'Toro Donante / Pajuela',
-            hintText: widget.todosDonantes.isEmpty
-                ? 'Sin donantes registrados — use "Registrar" abajo'
-                : 'Seleccionar donante activo',
-            prefixIcon:
-                const Icon(Icons.science_outlined, size: 19, color: AppColors.primary),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            isDense: true,
-          ),
-          child: DropdownButton<String>(
-            value: widget.toroDonante?.id,
-            isExpanded: true,
-            underline: const SizedBox.shrink(),
-            isDense: true,
-            hint: Text(
-              widget.todosDonantes.isEmpty
-                  ? '— Sin donantes registrados —'
-                  : '— Seleccionar —',
-              style: const TextStyle(fontSize: 13),
-            ),
-            items: widget.todosDonantes
-                .map((t) => DropdownMenuItem<String>(
-                      value: t.id,
-                      child: Text(t.etiquetaDisplay,
-                          style: const TextStyle(fontSize: 13)),
-                    ))
-                .toList(),
-            onChanged: (id) {
-              final toro =
-                  widget.todosDonantes.where((t) => t.id == id).firstOrNull;
-              widget.onToroDonante?.call(toro);
-            },
+        CustomFormDropdown<String>(
+          label: 'Toro Donante / Pajuela',
+          value: widget.toroDonante?.id,
+          hint: widget.todosDonantes.isEmpty
+              ? 'Sin donantes registrados'
+              : 'Seleccionar donante',
+          prefixIcon: const Icon(Icons.science_outlined, size: 19),
+          items: widget.todosDonantes
+              .map(
+                (t) => DropdownMenuItem(
+                  value: t.id,
+                  child: Text(t.etiquetaDisplay),
+                ),
+              )
+              .toList(),
+          onChanged: (id) => widget.onToroDonante?.call(
+            widget.todosDonantes.where((t) => t.id == id).firstOrNull,
           ),
         ),
         const SizedBox(height: 8),

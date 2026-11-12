@@ -1,11 +1,9 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/columna_tabla.dart';
 import '../../../../data/models/animal_model.dart';
 import '../../../controllers/inventario_controller.dart';
 import 'cards/animal_card.dart';
-import 'editar_animal_dialog.dart';
 import '../editar_animal_screen.dart';
 
 class _ColDef {
@@ -13,11 +11,7 @@ class _ColDef {
   final DataColumn header;
   final DataCell Function(AnimalModel, InventarioController) cell;
 
-  const _ColDef({
-    required this.tipo,
-    required this.header,
-    required this.cell,
-  });
+  const _ColDef({required this.tipo, required this.header, required this.cell});
 }
 
 class EntityDataTable extends StatefulWidget {
@@ -47,11 +41,8 @@ class _EntityDataTableState extends State<EntityDataTable> {
   Widget build(BuildContext context) {
     final c = widget.controller;
     final total = c.totalResultadosCoincidentes;
-    final rowsPerPage = c.rowsPerPage;
-    final totalPages = total == 0 ? 1 : ((total - 1) ~/ rowsPerPage) + 1;
-    final safePage = c.currentPage.clamp(0, totalPages - 1);
-    final startIdx = total == 0 ? 0 : safePage * rowsPerPage;
-    final endIdx = math.min(startIdx + rowsPerPage, total);
+    const startIdx = 0;
+    final endIdx = total;
 
     return Material(
       color: Colors.white,
@@ -140,76 +131,6 @@ class _EntityDataTableState extends State<EntityDataTable> {
                 ),
               ),
             ),
-
-          // BARRA DE PAGINACIÓN RESPONSIVA
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Filas por página:',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    DropdownButton<int>(
-                      value: rowsPerPage,
-                      underline: const SizedBox.shrink(),
-                      isDense: true,
-                      items: const [
-                        DropdownMenuItem(value: 10, child: Text('10')),
-                        DropdownMenuItem(value: 25, child: Text('25')),
-                        DropdownMenuItem(value: 50, child: Text('50')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) c.cambiarFilasPorPagina(val);
-                      },
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Página ${safePage + 1} de $totalPages',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      tooltip: 'Página anterior',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: safePage > 0
-                          ? () => c.cambiarPagina(safePage - 1)
-                          : null,
-                      icon: const Icon(Icons.chevron_left_rounded),
-                    ),
-                    IconButton(
-                      tooltip: 'Página siguiente',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: safePage < totalPages - 1
-                          ? () => c.cambiarPagina(safePage + 1)
-                          : null,
-                      icon: const Icon(Icons.chevron_right_rounded),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -238,10 +159,7 @@ class _EntityDataTableState extends State<EntityDataTable> {
   ) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => EditarAnimalScreen(
-          animal: animal,
-          controller: c,
-        ),
+        builder: (_) => EditarAnimalScreen(animal: animal, controller: c),
       ),
     );
   }
@@ -306,10 +224,14 @@ class _EntityDataTableState extends State<EntityDataTable> {
                     : '-',
               ),
             ),
-            DataCell(_chipEstadoSimple(
-              f.estado,
-              f.estado == 'Activa' ? AppColors.success : AppColors.textSecondary,
-            )),
+            DataCell(
+              _chipEstadoSimple(
+                f.estado,
+                f.estado == 'Activa'
+                    ? AppColors.success
+                    : AppColors.textSecondary,
+              ),
+            ),
             DataCell(
               Text(
                 f.fuentesAgua.isEmpty ? 'Ninguna' : f.fuentesAgua.join(', '),
@@ -389,10 +311,14 @@ class _EntityDataTableState extends State<EntityDataTable> {
             DataCell(Text(l.fincaNombre ?? c.nombreFincaPorId(l.fincaId))),
             DataCell(Text(l.propositoProductivo)),
             DataCell(Text(l.metaGananciaPesoDiaria.toStringAsFixed(3))),
-            DataCell(_chipEstadoSimple(
-              l.estado,
-              l.estado == 'Activo' ? AppColors.success : AppColors.textSecondary,
-            )),
+            DataCell(
+              _chipEstadoSimple(
+                l.estado,
+                l.estado == 'Activo'
+                    ? AppColors.success
+                    : AppColors.textSecondary,
+              ),
+            ),
             DataCell(Text('$anims cabezas')),
             DataCell(
               ConstrainedBox(
@@ -411,107 +337,102 @@ class _EntityDataTableState extends State<EntityDataTable> {
   }
 
   List<_ColDef> _buildColDefs(InventarioController c) => [
-        _ColDef(
-          tipo: ColumnaTabla.arete,
-          header: DataColumn(
-            label: const Text('Arete Manejo'),
-            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-          ),
-          cell: (a, _) => DataCell(
-            Text(
-              a.areteManejo,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+    _ColDef(
+      tipo: ColumnaTabla.arete,
+      header: DataColumn(
+        label: const Text('Arete Manejo'),
+        onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+      ),
+      cell: (a, _) => DataCell(
+        Text(
+          a.areteManejo,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    ),
+    _ColDef(
+      tipo: ColumnaTabla.nombreAlias,
+      header: DataColumn(
+        label: const Text('Nombre / Alias'),
+        onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+      ),
+      cell: (a, _) => DataCell(Text(a.nombreAlias ?? '-')),
+    ),
+    _ColDef(
+      tipo: ColumnaTabla.sexo,
+      header: DataColumn(
+        label: const Text('Sexo'),
+        onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+      ),
+      cell: (a, _) => DataCell(Text(a.sexo)),
+    ),
+    _ColDef(
+      tipo: ColumnaTabla.categoria,
+      header: const DataColumn(label: Text('Categoría')),
+      cell: (a, _) => DataCell(Text(a.categoriaZootecnica)),
+    ),
+    _ColDef(
+      tipo: ColumnaTabla.raza,
+      header: DataColumn(
+        label: const Text('Raza / Genética'),
+        onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+      ),
+      cell: (a, _) => DataCell(
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 200),
+          child: Text(
+            a.razaEtiquetaDisplay,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        _ColDef(
-          tipo: ColumnaTabla.nombreAlias,
-          header: DataColumn(
-            label: const Text('Nombre / Alias'),
-            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-          ),
-          cell: (a, _) => DataCell(Text(a.nombreAlias ?? '-')),
+      ),
+    ),
+    _ColDef(
+      tipo: ColumnaTabla.peso,
+      header: DataColumn(
+        label: const Text('Peso (kg)'),
+        numeric: true,
+        onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+      ),
+      cell: (a, _) => DataCell(
+        Text(a.pesoActual != null ? a.pesoActual!.toStringAsFixed(2) : '-'),
+      ),
+    ),
+    _ColDef(
+      tipo: ColumnaTabla.manga,
+      header: const DataColumn(label: Text('Manga')),
+      cell: (a, ctrl) =>
+          DataCell(Text(a.loteNombre ?? ctrl.nombreLotePorId(a.loteId))),
+    ),
+    _ColDef(
+      tipo: ColumnaTabla.potrero,
+      header: const DataColumn(label: Text('Potrero')),
+      cell: (a, _) => DataCell(Text(a.potreroActual ?? '-')),
+    ),
+    _ColDef(
+      tipo: ColumnaTabla.finca,
+      header: DataColumn(
+        label: const Text('Finca Actual'),
+        onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+      ),
+      cell: (a, ctrl) =>
+          DataCell(Text(a.fincaNombre ?? ctrl.nombreFincaPorId(a.fincaId))),
+    ),
+    _ColDef(
+      tipo: ColumnaTabla.estado,
+      header: DataColumn(
+        label: const Text('Estado'),
+        onSort: (i, asc) => c.ordenarPorColumna(i, asc),
+      ),
+      cell: (a, _) => DataCell(
+        _chipEstadoSimple(
+          a.estadoActual,
+          AnimalCard.colorPorEstado(a.estadoActual),
         ),
-        _ColDef(
-          tipo: ColumnaTabla.sexo,
-          header: DataColumn(
-            label: const Text('Sexo'),
-            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-          ),
-          cell: (a, _) => DataCell(Text(a.sexo)),
-        ),
-        _ColDef(
-          tipo: ColumnaTabla.categoria,
-          header: const DataColumn(label: Text('Categoría')),
-          cell: (a, _) => DataCell(Text(a.categoriaZootecnica)),
-        ),
-        _ColDef(
-          tipo: ColumnaTabla.raza,
-          header: DataColumn(
-            label: const Text('Raza / Genética'),
-            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-          ),
-          cell: (a, _) => DataCell(
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 200),
-              child: Text(
-                a.razaEtiquetaDisplay,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ),
-        _ColDef(
-          tipo: ColumnaTabla.peso,
-          header: DataColumn(
-            label: const Text('Peso (kg)'),
-            numeric: true,
-            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-          ),
-          cell: (a, _) => DataCell(
-            Text(
-              a.pesoActual != null
-                  ? a.pesoActual!.toStringAsFixed(2)
-                  : '-',
-            ),
-          ),
-        ),
-        _ColDef(
-          tipo: ColumnaTabla.manga,
-          header: const DataColumn(label: Text('Manga')),
-          cell: (a, ctrl) =>
-              DataCell(Text(a.loteNombre ?? ctrl.nombreLotePorId(a.loteId))),
-        ),
-        _ColDef(
-          tipo: ColumnaTabla.potrero,
-          header: const DataColumn(label: Text('Potrero')),
-          cell: (a, _) => DataCell(Text(a.potreroActual ?? '-')),
-        ),
-        _ColDef(
-          tipo: ColumnaTabla.finca,
-          header: DataColumn(
-            label: const Text('Finca Actual'),
-            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-          ),
-          cell: (a, ctrl) => DataCell(
-            Text(a.fincaNombre ?? ctrl.nombreFincaPorId(a.fincaId)),
-          ),
-        ),
-        _ColDef(
-          tipo: ColumnaTabla.estado,
-          header: DataColumn(
-            label: const Text('Estado'),
-            onSort: (i, asc) => c.ordenarPorColumna(i, asc),
-          ),
-          cell: (a, _) => DataCell(
-            _chipEstadoSimple(
-              a.estadoActual,
-              AnimalCard.colorPorEstado(a.estadoActual),
-            ),
-          ),
-        ),
-      ];
+      ),
+    ),
+  ];
 
   Widget _buildAnimalesTable(
     InventarioController c,

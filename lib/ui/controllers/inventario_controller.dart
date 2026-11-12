@@ -571,6 +571,7 @@ class InventarioController extends ChangeNotifier {
     final qLocal = _animalBusquedaEspecifica.trim().toLowerCase();
 
     final resultado = _allAnimales.where((a) {
+      if (a.esExterno) return false;
       if (_animalFincaId != null && a.fincaId != _animalFincaId) return false;
       if (_animalLoteId != null && a.loteId != _animalLoteId) return false;
       if (_animalSexo != null && a.sexo != _animalSexo) return false;
@@ -762,11 +763,11 @@ class InventarioController extends ChangeNotifier {
   }
 
   List<AnimalModel> obtenerAnimalesDeFinca(String fincaId) {
-    return _allAnimales.where((a) => a.fincaId == fincaId).toList();
+    return _allAnimales.where((a) => !a.esExterno && a.fincaId == fincaId).toList();
   }
 
   List<AnimalModel> obtenerAnimalesDeLote(String loteId) {
-    return _allAnimales.where((a) => a.loteId == loteId).toList();
+    return _allAnimales.where((a) => !a.esExterno && a.loteId == loteId).toList();
   }
 
   @override

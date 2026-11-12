@@ -585,12 +585,14 @@ class _RazaSearchDialogState extends State<_RazaSearchDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Catálogo Zootécnico de Razas',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  const Expanded(
+                    child: Text(
+                      'Catálogo Zootécnico de Razas',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                   IconButton(

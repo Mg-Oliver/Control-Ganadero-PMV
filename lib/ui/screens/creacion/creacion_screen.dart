@@ -153,88 +153,95 @@ class _CreacionScreenState extends State<CreacionScreen> {
       appBar: !widget.showAppBar
           ? null
           : AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Row(
-          children: [
-            Icon(Icons.agriculture_rounded, size: 24),
-            SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                'Control Ganadero Bovino • Registro y Altas',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton.icon(
-              onPressed: _loadingFincas ? null : _cargarFincas,
-              icon: _loadingFincas
-                  ? const SizedBox(
-                      width: 15,
-                      height: 15,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              title: const Row(
+                children: [
+                  Icon(Icons.agriculture_rounded, size: 24),
+                  SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      'Control Ganadero Bovino • Registro y Altas',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                    )
-                  : const Icon(Icons.sync_rounded, color: Colors.white, size: 18),
-              label: Text(
-                '${_fincas.length} Fincas',
-                style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: TextButton.icon(
+                    onPressed: _loadingFincas ? null : _cargarFincas,
+                    icon: _loadingFincas
+                        ? const SizedBox(
+                            width: 15,
+                            height: 15,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.sync_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                    label: Text(
+                      '${_fincas.length} Fincas',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
       body: Column(
         children: [
-          // BARRA SUPERIOR DE ACCESO RÁPIDO
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: AppColors.border),
+          // Accesos generales fuera del registro de animales.
+          if (widget.initialTab != ModuloCreacionTab.animal)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(bottom: BorderSide(color: AppColors.border)),
               ),
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 980),
-                child: Wrap(
-                  spacing: 12,
-                  runSpacing: 10,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    _QuickAccessTabButton(
-                      label: '+ Nueva Finca',
-                      icon: Icons.landscape_outlined,
-                      isSelected: _activeTab == ModuloCreacionTab.finca,
-                      onTap: () => _cambiarTabManual(ModuloCreacionTab.finca),
-                    ),
-                    _QuickAccessTabButton(
-                      label: '+ Nueva Manga',
-                      icon: Icons.grid_view_rounded,
-                      isSelected: _activeTab == ModuloCreacionTab.lote,
-                      onTap: () => _cambiarTabManual(ModuloCreacionTab.lote),
-                    ),
-                    _QuickAccessTabButton(
-                      label: '+ Nuevo Animal',
-                      icon: Icons.pets_outlined,
-                      isSelected: _activeTab == ModuloCreacionTab.animal,
-                      onTap: () => _cambiarTabManual(ModuloCreacionTab.animal),
-                    ),
-                  ],
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 980),
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 10,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      _QuickAccessTabButton(
+                        label: '+ Nueva Finca',
+                        icon: Icons.landscape_outlined,
+                        isSelected: _activeTab == ModuloCreacionTab.finca,
+                        onTap: () => _cambiarTabManual(ModuloCreacionTab.finca),
+                      ),
+                      _QuickAccessTabButton(
+                        label: '+ Nueva Manga',
+                        icon: Icons.grid_view_rounded,
+                        isSelected: _activeTab == ModuloCreacionTab.lote,
+                        onTap: () => _cambiarTabManual(ModuloCreacionTab.lote),
+                      ),
+                      _QuickAccessTabButton(
+                        label: '+ Nuevo Animal',
+                        icon: Icons.pets_outlined,
+                        isSelected: _activeTab == ModuloCreacionTab.animal,
+                        onTap: () =>
+                            _cambiarTabManual(ModuloCreacionTab.animal),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
           // BANNER DE RETORNO ASISTIDO (CUANDO VIENE DESDE CASCADA)
           if (_returnTab != null)
@@ -320,9 +327,7 @@ class _CreacionScreenState extends State<CreacionScreen> {
                   child: IndexedStack(
                     index: _activeTab.index,
                     children: [
-                      FincaForm(
-                        onFincaCreated: _handleFincaCreated,
-                      ),
+                      FincaForm(onFincaCreated: _handleFincaCreated),
                       LoteForm(
                         fincas: _fincas,
                         isLoadingFincas: _loadingFincas,
@@ -345,11 +350,12 @@ class _CreacionScreenState extends State<CreacionScreen> {
                           ModuloCreacionTab.finca,
                           origen: ModuloCreacionTab.animal,
                         ),
-                        onRequestCreateLote: (fincaId) => _abrirCreacionTemporal(
-                          ModuloCreacionTab.lote,
-                          origen: ModuloCreacionTab.animal,
-                          fincaId: fincaId,
-                        ),
+                        onRequestCreateLote: (fincaId) =>
+                            _abrirCreacionTemporal(
+                              ModuloCreacionTab.lote,
+                              origen: ModuloCreacionTab.animal,
+                              fincaId: fincaId,
+                            ),
                         onAnimalCreated: _handleAnimalCreated,
                       ),
                     ],
@@ -419,4 +425,3 @@ class _QuickAccessTabButton extends StatelessWidget {
     );
   }
 }
-

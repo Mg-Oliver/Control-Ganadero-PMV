@@ -55,6 +55,7 @@ class MarcasHierro {
 }
 
 class AnimalModel {
+  final bool esExterno;
   final String id;
   final String codigoSistema;
   final String areteManejo;
@@ -93,6 +94,7 @@ class AnimalModel {
   final GenealogiaModel? genealogia;
 
   const AnimalModel({
+    this.esExterno = false,
     required this.id,
     required this.codigoSistema,
     required this.areteManejo,
@@ -194,6 +196,7 @@ class AnimalModel {
     }
 
     return AnimalModel(
+      esExterno: json['es_externo'] as bool? ?? false,
       id: json['id'] as String,
       codigoSistema: (json['codigo_sistema'] as String?) ?? '',
       areteManejo: json['arete_manejo'] as String,
@@ -253,6 +256,7 @@ class AnimalModel {
     bool includeCodigo = true,
   }) {
     final map = <String, dynamic>{
+      'es_externo': esExterno,
       'arete_manejo': areteManejo,
       'arete_oficial': areteOficial,
       'nombre_alias': nombreAlias,
@@ -289,6 +293,7 @@ class AnimalModel {
   }
 
   AnimalModel copyWith({
+    bool? esExterno,
     String? id,
     String? codigoSistema,
     String? areteManejo,
@@ -325,6 +330,7 @@ class AnimalModel {
     GenealogiaModel? genealogia,
   }) {
     return AnimalModel(
+      esExterno: esExterno ?? this.esExterno,
       id: id ?? this.id,
       codigoSistema: codigoSistema ?? this.codigoSistema,
       areteManejo: areteManejo ?? this.areteManejo,
