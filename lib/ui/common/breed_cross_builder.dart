@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/razas_catalog.dart';
 import '../../core/utils/breed_cross_calculator.dart';
@@ -156,156 +157,65 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
     required String? valorActual,
     required ValueChanged<String> onSelected,
   }) async {
-    final seleccionada = await showDialog<RazaItem>(
+    final seleccionada = await showDialog<String>(
       context: context,
       builder: (_) => _RazaSearchDialog(selectedNombre: valorActual),
     );
     if (seleccionada != null) {
-      onSelected(seleccionada.nombre);
+      onSelected(seleccionada);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final etiquetaPreview = _esRazaPura
-        ? (_razaPuraNombre ?? '')
-        : _generarEtiquetaCruces(
-            _filasCruces
-                .where((f) => f.razaNombre != null && f.razaNombre!.isNotEmpty)
-                .toList(),
-          );
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FBF9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 12,
-            runSpacing: 10,
-            children: [
-              const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.biotech_outlined,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      'Composición Genética / Raza (Modo A) *',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment<bool>(
-                    value: true,
-                    icon: Icon(Icons.verified_outlined, size: 17),
-                    label: Text('Raza Pura'),
-                  ),
-                  ButtonSegment<bool>(
-                    value: false,
-                    icon: Icon(Icons.merge_type_rounded, size: 17),
-                    label: Text('Cruce / Mezcla'),
-                  ),
-                ],
-                selected: {_esRazaPura},
-                onSelectionChanged: (selection) {
-                  setState(() {
-                    _esRazaPura = selection.first;
-                  });
-                  _emitirCambio();
-                },
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return AppColors.primary;
-                    }
-                    return Colors.white;
-                  }),
-                  foregroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return Colors.white;
-                    }
-                    return AppColors.textPrimary;
-                  }),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Composición genética',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: 320,
+          child: CupertinoSlidingSegmentedControl<bool>(
+            groupValue: _esRazaPura,
+            backgroundColor: const Color(0xFFF0F2F1),
+            thumbColor: Colors.white,
+            padding: const EdgeInsets.all(4),
+            children: const {
+              true: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Text(
+                  'Raza pura',
+                  style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          if (_esRazaPura)
-            _buildSelectorRazaPura()
-          else
-            _buildConstructorCruces(),
-          const SizedBox(height: 14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: etiquetaPreview.isNotEmpty
-                  ? AppColors.primary.withValues(alpha: 0.09)
-                  : const Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.label_important_outline,
-                  size: 18,
-                  color: etiquetaPreview.isNotEmpty
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
+              false: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Text(
+                  'Cruce',
+                  style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      text: 'Etiqueta Zootécnica: ',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: etiquetaPreview.isNotEmpty
-                              ? etiquetaPreview
-                              : 'Pendiente de selección',
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.bold,
-                            color: etiquetaPreview.isNotEmpty
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            },
+            onValueChanged: (value) {
+              if (value == null) return;
+              setState(() => _esRazaPura = value);
+              _emitirCambio();
+            },
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        if (_esRazaPura)
+          _buildSelectorRazaPura()
+        else
+          _buildConstructorCruces(),
+      ],
     );
   }
 
@@ -325,7 +235,7 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
       borderRadius: BorderRadius.circular(10),
       child: InputDecorator(
         decoration: InputDecoration(
-          labelText: 'Raza Pura del Catálogo Oficial',
+          labelText: 'Raza',
           filled: true,
           fillColor: Colors.white,
           prefixIcon: const Icon(
@@ -376,8 +286,9 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
                   ),
                 ],
               )
-            : const Text(
-                'Buscar y seleccionar raza pura (Holstein, Brahman, Gyr...)',
+            : Text(
+                _razaPuraNombre ??
+                    'Buscar y seleccionar raza pura (Holstein, Brahman, Gyr...)',
                 style: TextStyle(
                   fontSize: 13.5,
                   color: AppColors.textSecondary,
@@ -395,8 +306,11 @@ class _BreedCrossBuilderState extends State<BreedCrossBuilder> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 8,
           children: [
             const Text(
               'Fracciones de Sangre:',
@@ -603,7 +517,7 @@ class _RazaSearchDialogState extends State<_RazaSearchDialog> {
                 children: [
                   const Expanded(
                     child: Text(
-                      'Catálogo Zootécnico de Razas',
+                      'Seleccionar raza',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -685,6 +599,16 @@ class _RazaSearchDialogState extends State<_RazaSearchDialog> {
                 ),
               ),
               const Divider(height: 18),
+              ListTile(
+                dense: true,
+                title: const Text('Otro'),
+                subtitle: const Text('Raza no incluida en la lista'),
+                selected: widget.selectedNombre == 'Otro',
+                trailing: widget.selectedNombre == 'Otro'
+                    ? const Icon(Icons.check_rounded, size: 20)
+                    : null,
+                onTap: () => Navigator.pop(context, 'Otro'),
+              ),
               Expanded(
                 child: filtradas.isEmpty
                     ? const Center(
@@ -737,7 +661,7 @@ class _RazaSearchDialogState extends State<_RazaSearchDialog> {
                                 ),
                               ),
                             ),
-                            onTap: () => Navigator.pop(context, raza),
+                            onTap: () => Navigator.pop(context, raza.nombre),
                           );
                         },
                       ),
