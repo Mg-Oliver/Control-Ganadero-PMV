@@ -4,6 +4,8 @@ import '../../core/constants/app_colors.dart';
 
 class CustomTextField extends StatelessWidget {
   final String label;
+  final bool showLabel;
+  final double? minimumInputHeight;
   final String? hint;
   final String? helperText;
   final String? suffixText;
@@ -25,6 +27,8 @@ class CustomTextField extends StatelessWidget {
   const CustomTextField({
     super.key,
     required this.label,
+    this.showLabel = true,
+    this.minimumInputHeight,
     this.hint,
     this.helperText,
     this.suffixText,
@@ -47,6 +51,8 @@ class CustomTextField extends StatelessWidget {
   factory CustomTextField.numeric({
     Key? key,
     required String label,
+    bool showLabel = true,
+    double? minimumInputHeight,
     String? hint,
     String? helperText,
     String? suffixText,
@@ -62,6 +68,8 @@ class CustomTextField extends StatelessWidget {
     return CustomTextField(
       key: key,
       label: label,
+      showLabel: showLabel,
+      minimumInputHeight: minimumInputHeight,
       hint: hint,
       helperText: helperText,
       suffixText: suffixText,
@@ -87,34 +95,38 @@ class CustomTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: RichText(
-                text: TextSpan(
-                  text: label,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                  children: [
-                    if (isRequired)
-                      const TextSpan(
-                        text: ' *',
-                        style: TextStyle(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.bold,
+        if (showLabel) ...[
+          Row(
+            children: [
+              Expanded(
+                child: RichText(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
+                    text: label,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    children: [
+                      if (isRequired)
+                        const TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            ?headerTrailing,
-          ],
-        ),
-        const SizedBox(height: 6),
+              ?headerTrailing,
+            ],
+          ),
+          const SizedBox(height: 6),
+        ],
         TextFormField(
           controller: controller,
           focusNode: focusNode,
@@ -131,21 +143,26 @@ class CustomTextField extends StatelessWidget {
             color: enabled ? AppColors.textPrimary : AppColors.textSecondary,
           ),
           decoration: InputDecoration(
-            hintText: hint,
+            constraints: minimumInputHeight == null
+                ? null
+                : BoxConstraints(minHeight: minimumInputHeight!),
+            // Mantiene el nombre accesible al ocultar el encabezado de campos agrupados.
+            hintText: hint ?? (showLabel ? null : label),
             hintStyle: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 13.5,
             ),
             helperText: helperText,
             suffixText: suffixText,
+            suffixStyle: showLabel ? null : const TextStyle(fontSize: 10),
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: (!enabled || readOnly)
                 ? const Color(0xFFF3F4F6)
                 : Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: showLabel ? 14 : 8,
               vertical: 12,
             ),
             border: OutlineInputBorder(

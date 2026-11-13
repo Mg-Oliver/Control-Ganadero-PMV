@@ -50,8 +50,12 @@ void main() {
         [lista('Tipo de Explotación'), lista('Finca Actual')],
         [caja('Código de animal'), caja('Arete oficial'), caja('Nombre')],
         [lista('Seleccionar padre'), lista('Seleccionar madre (vaca)')],
-        [lista('Sexo'), caja('Fecha de Nacimiento'), find.text('Edad actual')],
-        [find.text('Categoría'), lista('Origen del Animal')],
+        [
+          lista('Sexo'),
+          caja('Fecha de Nacimiento'),
+          find.byKey(const ValueKey('edad_actual')),
+        ],
+        [find.text('Categoría'), caja('Peso'), lista('Origen del Animal')],
       ];
       double anterior = -1;
       for (final fila in filas) {
@@ -71,6 +75,28 @@ void main() {
             greaterThan(tester.getTopLeft(fila[1]).dx),
           );
         }
+      }
+      final entradas =
+          [
+                lista('Sexo'),
+                caja('Fecha de Nacimiento'),
+                caja('Años'),
+                caja('Meses'),
+                caja('Días'),
+              ]
+              .map(
+                (f) => tester.getRect(
+                  find.descendant(of: f, matching: find.byType(InputDecorator)),
+                ),
+              )
+              .toList();
+      for (final rect in entradas.skip(1)) {
+        expect(
+          rect.top,
+          closeTo(entradas.first.top, 0.5),
+          reason: entradas.toString(),
+        );
+        expect(rect.bottom, closeTo(entradas.first.bottom, 0.5));
       }
       expect(
         find.text('Apertura de Expediente Individual Bovino'),

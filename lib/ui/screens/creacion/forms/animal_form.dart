@@ -981,13 +981,19 @@ class _AnimalFormState extends State<AnimalForm> {
             _buildEdadActual(),
           ]),
           const SizedBox(height: 18),
-          _filaCampos([_buildCategoriaAutomatica(), _buildOrigenDropdown()]),
-          const SizedBox(height: 18),
           _filaCampos([
+            _buildCategoriaAutomatica(),
             _buildPesoActualField(),
-            if (_sexo == 'Hembra') _buildNumeroPartos(),
-            if (_esOrigenComprado) _buildPrecioCompraField(),
+            _buildOrigenDropdown(),
           ]),
+          if (_puedeRegistrarPartos) ...[
+            const SizedBox(height: 18),
+            _buildNumeroPartos(),
+          ],
+          if (_esOrigenComprado) ...[
+            const SizedBox(height: 18),
+            _buildPrecioCompraField(),
+          ],
           if (_origen == 'Otro') ...[
             const SizedBox(height: 18),
             _buildOrigenOtroField(),
@@ -1485,7 +1491,7 @@ class _AnimalFormState extends State<AnimalForm> {
     final fecha = _leerFechaNacimiento(_fechaNacimientoCtrl.text);
     return _sexo == 'Hembra' &&
         fecha != null &&
-        EdadAnimal.esMayorDeMeses(fecha, 18, DateTime.now());
+        EdadAnimal.esMayorDeMeses(fecha, 10, DateTime.now());
   }
 
   int get _partosActuales =>
@@ -1496,9 +1502,7 @@ class _AnimalFormState extends State<AnimalForm> {
     controller: _numeroPartosCtrl,
     enabled: _puedeRegistrarPartos,
     allowDecimals: false,
-    helperText: _puedeRegistrarPartos
-        ? 'Determina la categoría de las hembras.'
-        : 'Disponible para hembras mayores de 18 meses.',
+    helperText: 'Determina la categoría de las hembras.',
     validator: (value) {
       if (!_puedeRegistrarPartos) return null;
       final partos = int.tryParse(value ?? '');
@@ -1545,6 +1549,7 @@ class _AnimalFormState extends State<AnimalForm> {
   Widget _buildSexoDropdown() {
     return CustomFormDropdown<String>(
       label: 'Sexo',
+      headerTrailing: const SizedBox(height: 20),
       enabled: widget.sexoInicial == null,
       value: _sexo,
       isRequired: true,
@@ -1564,7 +1569,7 @@ class _AnimalFormState extends State<AnimalForm> {
 
   Widget _buildPesoActualField() {
     return CustomTextField.numeric(
-      label: 'Peso Actual',
+      label: 'Peso',
       hint: 'Ej. 420.5',
       suffixText: 'kg',
       controller: _pesoActualCtrl,
@@ -1643,14 +1648,21 @@ class _AnimalFormState extends State<AnimalForm> {
   }
 
   Widget _buildEdadActual() => Column(
+    key: const ValueKey('edad_actual'),
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Text(
-        'Edad actual',
-        style: TextStyle(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+      const SizedBox(
+        height: 20,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Edad actual',
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ),
       ),
       const SizedBox(height: 6),
@@ -1667,6 +1679,9 @@ class _AnimalFormState extends State<AnimalForm> {
                 padding: const EdgeInsets.only(right: 6),
                 child: CustomTextField.numeric(
                   label: campo.$1,
+                  showLabel: false,
+                  minimumInputHeight: 48,
+                  suffixText: campo.$1.toLowerCase(),
                   controller: campo.$2,
                   allowDecimals: false,
                   validator: (v) {
@@ -1687,21 +1702,25 @@ class _AnimalFormState extends State<AnimalForm> {
 
   Widget _buildFechaNacimientoSelector() => CustomTextField(
     label: 'Fecha de Nacimiento',
+    minimumInputHeight: 48,
     hint: 'dd/mm/aaaa',
     controller: _fechaNacimientoCtrl,
     isRequired: true,
     keyboardType: TextInputType.datetime,
-    headerTrailing: TextButton(
-      style: TextButton.styleFrom(
-        padding: EdgeInsets.zero,
-        minimumSize: const Size(0, 20),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      onPressed: () =>
-          setState(() => _fechaNacimientoExacta = !_fechaNacimientoExacta),
-      child: Text(
-        _fechaNacimientoExacta ? 'Exacta' : 'Aproximada',
-        style: const TextStyle(fontSize: 11),
+    headerTrailing: SizedBox(
+      height: 20,
+      child: TextButton(
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(0, 20),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        onPressed: () =>
+            setState(() => _fechaNacimientoExacta = !_fechaNacimientoExacta),
+        child: Text(
+          _fechaNacimientoExacta ? 'Exacta' : 'Aproximada',
+          style: const TextStyle(fontSize: 11),
+        ),
       ),
     ),
     validator: (v) {
@@ -1709,7 +1728,7 @@ class _AnimalFormState extends State<AnimalForm> {
         return 'Ingrese una fecha válida entre 1900 y hoy (dd/mm/aaaa)';
       }
       if (widget.sexoInicial == 'Hembra' && !_puedeRegistrarPartos) {
-        return 'La madre debe ser mayor de 18 meses para registrar sus partos';
+        return 'La madre debe ser mayor de 10 meses para registrar sus partos';
       }
       return null;
     },

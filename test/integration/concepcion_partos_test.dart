@@ -118,27 +118,25 @@ Future<void> concepcion(WidgetTester tester, String valor) async {
 
 void main() {
   testWidgets(
-    'partos se activa a 18 meses y un día y se desactiva para machos',
+    'partos aparece solo para hembras mayores de 10 meses y debajo del origen',
     (tester) async {
       await _abrir(tester);
-      expect(
-        tester.widget<CustomTextField>(caja('Número de partos')).enabled,
-        isFalse,
-      );
-      for (final campoEdad in [('Años', '1'), ('Meses', '6'), ('Días', '0')]) {
+      expect(caja('Número de partos'), findsNothing);
+      for (final campoEdad in [('Años', '0'), ('Meses', '10'), ('Días', '0')]) {
         await tester.ensureVisible(campo(campoEdad.$1));
         await tester.enterText(campo(campoEdad.$1), campoEdad.$2);
       }
       await tester.pump();
-      expect(
-        tester.widget<CustomTextField>(caja('Número de partos')).enabled,
-        isFalse,
-      );
+      expect(caja('Número de partos'), findsNothing);
       await tester.enterText(campo('Días'), '1');
       await tester.pump();
       expect(
         tester.widget<CustomTextField>(caja('Número de partos')).enabled,
         isTrue,
+      );
+      expect(
+        tester.getTopLeft(caja('Número de partos')).dy,
+        greaterThan(tester.getTopLeft(lista('Origen del Animal')).dy),
       );
       await tester.enterText(campo('Número de partos'), '1');
       await tester.pump();
@@ -152,25 +150,15 @@ void main() {
     },
   );
   testWidgets(
-    'deshabilitar partos no borra un dato histórico al editar otros campos',
+    'ocultar partos no borra un dato histórico al editar otros campos',
     (tester) async {
       final service = await _abrir(
         tester,
         edit: animal('JOVEN').copyWith(
-          fechaNacimiento: DateTime.now().subtract(const Duration(days: 400)),
+          fechaNacimiento: DateTime.now().subtract(const Duration(days: 200)),
         ),
       );
-      expect(
-        tester.widget<CustomTextField>(caja('Número de partos')).enabled,
-        isFalse,
-      );
-      expect(
-        tester
-            .widget<TextFormField>(campo('Número de partos'))
-            .controller!
-            .text,
-        '1',
-      );
+      expect(caja('Número de partos'), findsNothing);
       await tester.ensureVisible(find.text('Guardar Cambios'));
       await tester.tap(find.text('Guardar Cambios'));
       await tester.pumpAndSettle();
