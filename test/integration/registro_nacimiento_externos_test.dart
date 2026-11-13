@@ -9,11 +9,24 @@ import 'package:bovino_mvp/data/models/genealogia_model.dart';
 import 'package:bovino_mvp/data/services/animales_service.dart';
 import 'package:bovino_mvp/ui/controllers/inventario_controller.dart';
 import 'package:bovino_mvp/ui/common/custom_text_field.dart';
+import 'package:bovino_mvp/ui/common/custom_form_dropdown.dart';
 import 'package:bovino_mvp/ui/screens/creacion/forms/animal_form.dart';
 import '../helpers/test_theme.dart';
 
 class _AnimalesMemoria extends AnimalesService {
   AnimalModel? registrado;
+  List<AnimalModel> candidatos = [];
+  @override
+  Future<List<AnimalModel>> consultarInventarioRelacional({
+    String? fincaId,
+    String? loteId,
+    String? sexo,
+    String? tipoExplotacion,
+    String? estadoActual,
+    bool? esRazaPura,
+    String? razaPuraNombre,
+    String? busqueda,
+  }) async => candidatos;
   @override
   Future<AnimalModel> registrar(
     AnimalModel animal, {
@@ -112,6 +125,59 @@ void main() {
     },
   );
 
+  testWidgets('listas de padres respetan sexo y edades mínimas', (
+    tester,
+  ) async {
+    final hoy = DateTime.now();
+    AnimalModel candidato(String id, String sexo, int meses, {int dias = 0}) =>
+        animal(id).copyWith(
+          sexo: sexo,
+          fechaNacimiento: DateTime(
+            hoy.year,
+            hoy.month - meses,
+            hoy.day,
+          ).subtract(Duration(days: dias)),
+        );
+    final servicio = _AnimalesMemoria()
+      ..candidatos = [
+        candidato('toro-joven', 'Macho', 8),
+        candidato('toro-9-exactos', 'Macho', 9),
+        candidato('toro-apto', 'Macho', 9, dias: 1),
+        candidato('hembra-joven', 'Hembra', 9),
+        candidato('hembra-10-exactos', 'Hembra', 10),
+        candidato('hembra-apta', 'Hembra', 10, dias: 1),
+      ];
+    await abrirFormulario(tester, servicio: servicio);
+    await tester.pumpAndSettle();
+    CustomFormDropdown<String> lista(String label) => tester.widget(
+      find.byWidgetPredicate(
+        (w) => w is CustomFormDropdown<String> && w.label == label,
+      ),
+    );
+    expect(lista('Seleccionar padre').items.map((i) => i.value), [
+      '',
+      'toro-apto',
+    ]);
+    expect(lista('Seleccionar madre (vaca)').items.map((i) => i.value), [
+      '',
+      'hembra-apta',
+    ]);
+    await tester.tap(
+      find.descendant(
+        of: find.byWidgetPredicate(
+          (w) =>
+              w is CustomFormDropdown<String> && w.label == 'Seleccionar padre',
+        ),
+        matching: find.byType(DropdownButtonFormField<String>),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('toro-apto ·').last);
+    await tester.pumpAndSettle();
+    expect(lista('Seleccionar padre').value, 'toro-apto');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'registrar padre externo guarda expediente completo y lo asigna al hijo',
     (tester) async {
@@ -123,6 +189,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('¿Forma parte de la finca?'), findsOneWidget);
       await tester.enterText(campo('Código de animal'), 'TORO-EXT');
+      await tester.ensureVisible(campo('Fecha de Nacimiento'));
+      await tester.enterText(campo('Fecha de Nacimiento'), '01/01/2020');
       final raza = find.text(
         'Buscar y seleccionar raza pura (Holstein, Brahman, Gyr...)',
       );
@@ -170,6 +238,8 @@ void main() {
       await tester.tap(registrar);
       await tester.pumpAndSettle();
       await tester.enterText(campo('Código de animal'), 'TORO-COMPAT');
+      await tester.ensureVisible(campo('Fecha de Nacimiento'));
+      await tester.enterText(campo('Fecha de Nacimiento'), '01/01/2020');
       final raza = find.text(
         'Buscar y seleccionar raza pura (Holstein, Brahman, Gyr...)',
       );

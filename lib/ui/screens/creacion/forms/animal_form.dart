@@ -510,6 +510,20 @@ class _AnimalFormState extends State<AnimalForm> {
       ),
     );
     if (resultado != null && mounted) {
+      final minimoMeses = sexo == 'Macho' ? 9 : 10;
+      if (!EdadAnimal.esMayorDeMeses(
+        resultado.fechaNacimiento,
+        minimoMeses,
+        DateTime.now(),
+      )) {
+        setState(() => _animalesDeFinca = [resultado, ..._animalesDeFinca]);
+        AppFeedback.mostrarError(
+          context: context,
+          mensaje:
+              'Animal registrado. Para asignarlo como ${sexo == 'Macho' ? 'padre' : 'madre'} debe ser mayor de $minimoMeses meses.',
+        );
+        return;
+      }
       onAnimalRegistrado(resultado);
       AppFeedback.mostrarExito(
         context: context,
@@ -822,18 +836,36 @@ class _AnimalFormState extends State<AnimalForm> {
 
   @override
   Widget build(BuildContext context) {
-    final machosValidos = GenealogiaValidator.filtrarCandidatosValidos(
-      animalActualId: widget.animalAEditar?.id,
-      sexo: 'Macho',
-      candidatos: _animalesDeFinca,
-      todosLosAnimales: _animalesDeFinca,
-    );
-    final hembrasValidas = GenealogiaValidator.filtrarCandidatosValidos(
-      animalActualId: widget.animalAEditar?.id,
-      sexo: 'Hembra',
-      candidatos: _animalesDeFinca,
-      todosLosAnimales: _animalesDeFinca,
-    ).where((a) => a.categoriaZootecnica == 'Vaca').toList();
+    final machosValidos =
+        GenealogiaValidator.filtrarCandidatosValidos(
+              animalActualId: widget.animalAEditar?.id,
+              sexo: 'Macho',
+              candidatos: _animalesDeFinca,
+              todosLosAnimales: _animalesDeFinca,
+            )
+            .where(
+              (a) => EdadAnimal.esMayorDeMeses(
+                a.fechaNacimiento,
+                9,
+                DateTime.now(),
+              ),
+            )
+            .toList();
+    final hembrasValidas =
+        GenealogiaValidator.filtrarCandidatosValidos(
+              animalActualId: widget.animalAEditar?.id,
+              sexo: 'Hembra',
+              candidatos: _animalesDeFinca,
+              todosLosAnimales: _animalesDeFinca,
+            )
+            .where(
+              (a) => EdadAnimal.esMayorDeMeses(
+                a.fechaNacimiento,
+                10,
+                DateTime.now(),
+              ),
+            )
+            .toList();
 
     return Form(
       key: _formKey,
@@ -864,10 +896,84 @@ class _AnimalFormState extends State<AnimalForm> {
             const SizedBox(height: 12),
           ],
           _filaCampos([
+            _buildTipoExplotacionDropdown(),
+            _buildFincaCascadeDropdown(),
+          ]),
+          const SizedBox(height: 18),
+          _filaCampos([
             _buildAreteManejoField(),
             _buildAreteOficialField(),
             _buildNombreAliasField(),
           ]),
+          const SizedBox(height: 18),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _ParentescoSelectorCard(
+                  tituloRol: 'Padre (Reproductor / Toro)',
+                  iconoRol: Icons.male_rounded,
+                  esInterno: _padreEsInterno,
+                  esIA: _padreEsIA,
+                  candidatosInternos: machosValidos,
+                  animalSeleccionado: _padreSeleccionado,
+                  referenciaExternaCtrl: _padreExternoCtrl,
+                  referenciaExternaFocus: _padreExternoFocus,
+                  hintExterno:
+                      'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
+                  fincaSeleccionada: _selectedFincaId != null,
+                  toroDonante: _toroDonante,
+                  todosDonantes: _torosDonantes,
+                  onAnimalSelected: (animal) {
+                    setState(() => _padreSeleccionado = animal);
+                  },
+                  onToroDonante: (toro) {
+                    setState(() => _toroDonante = toro);
+                  },
+                  onRegistrarNuevo: () => _mostrarModalProgenitor(
+                    sexo: 'Macho',
+                    tituloRol: 'Padre (Reproductor / Toro)',
+                    onAnimalRegistrado: (nuevo) {
+                      setState(() {
+                        _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                        _padreSeleccionado = nuevo;
+                        _padreEsInterno = true;
+                      });
+                    },
+                  ),
+                  onRegistrarToroNuevo: _mostrarModalToroDonante,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _ParentescoSelectorCard(
+                  tituloRol: 'Madre (Vaca / Donadora)',
+                  iconoRol: Icons.female_rounded,
+                  esInterno: _madreEsInterna,
+                  candidatosInternos: hembrasValidas,
+                  animalSeleccionado: _madreSeleccionada,
+                  referenciaExternaCtrl: _madreExternaCtrl,
+                  referenciaExternaFocus: _madreExternaFocus,
+                  hintExterno: 'Ej. Donadora Embriones Hacienda El Vergel #405',
+                  fincaSeleccionada: _selectedFincaId != null,
+                  onAnimalSelected: (animal) {
+                    setState(() => _madreSeleccionada = animal);
+                  },
+                  onRegistrarNuevo: () => _mostrarModalProgenitor(
+                    sexo: 'Hembra',
+                    tituloRol: 'Madre (Vaca / Donadora)',
+                    onAnimalRegistrado: (nuevo) {
+                      setState(() {
+                        _animalesDeFinca = [nuevo, ..._animalesDeFinca];
+                        _madreSeleccionada = nuevo;
+                        _madreEsInterna = true;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 18),
           _filaCampos([
             _buildSexoDropdown(),
@@ -875,11 +981,7 @@ class _AnimalFormState extends State<AnimalForm> {
             _buildEdadActual(),
           ]),
           const SizedBox(height: 18),
-          _filaCampos([
-            _buildCategoriaAutomatica(),
-            _buildTipoExplotacionDropdown(),
-            _buildOrigenDropdown(),
-          ]),
+          _filaCampos([_buildCategoriaAutomatica(), _buildOrigenDropdown()]),
           const SizedBox(height: 18),
           _filaCampos([
             _buildPesoActualField(),
@@ -947,75 +1049,6 @@ class _AnimalFormState extends State<AnimalForm> {
                 },
               ),
               const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _ParentescoSelectorCard(
-                      tituloRol: 'Padre (Reproductor / Toro)',
-                      iconoRol: Icons.male_rounded,
-                      esInterno: _padreEsInterno,
-                      esIA: _padreEsIA,
-                      candidatosInternos: machosValidos,
-                      animalSeleccionado: _padreSeleccionado,
-                      referenciaExternaCtrl: _padreExternoCtrl,
-                      referenciaExternaFocus: _padreExternoFocus,
-                      hintExterno:
-                          'Ej. Pajuela Toro Gyr Sansão #BR-9942 / Catálogo ABS',
-                      fincaSeleccionada: _selectedFincaId != null,
-                      toroDonante: _toroDonante,
-                      todosDonantes: _torosDonantes,
-                      onAnimalSelected: (animal) {
-                        setState(() => _padreSeleccionado = animal);
-                      },
-                      onToroDonante: (toro) {
-                        setState(() => _toroDonante = toro);
-                      },
-                      onRegistrarNuevo: () => _mostrarModalProgenitor(
-                        sexo: 'Macho',
-                        tituloRol: 'Padre (Reproductor / Toro)',
-                        onAnimalRegistrado: (nuevo) {
-                          setState(() {
-                            _animalesDeFinca = [nuevo, ..._animalesDeFinca];
-                            _padreSeleccionado = nuevo;
-                            _padreEsInterno = true;
-                          });
-                        },
-                      ),
-                      onRegistrarToroNuevo: _mostrarModalToroDonante,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: _ParentescoSelectorCard(
-                      tituloRol: 'Madre (Vaca / Donadora)',
-                      iconoRol: Icons.female_rounded,
-                      esInterno: _madreEsInterna,
-                      candidatosInternos: hembrasValidas,
-                      animalSeleccionado: _madreSeleccionada,
-                      referenciaExternaCtrl: _madreExternaCtrl,
-                      referenciaExternaFocus: _madreExternaFocus,
-                      hintExterno:
-                          'Ej. Donadora Embriones Hacienda El Vergel #405',
-                      fincaSeleccionada: _selectedFincaId != null,
-                      onAnimalSelected: (animal) {
-                        setState(() => _madreSeleccionada = animal);
-                      },
-                      onRegistrarNuevo: () => _mostrarModalProgenitor(
-                        sexo: 'Hembra',
-                        tituloRol: 'Madre (Vaca / Donadora)',
-                        onAnimalRegistrado: (nuevo) {
-                          setState(() {
-                            _animalesDeFinca = [nuevo, ..._animalesDeFinca];
-                            _madreSeleccionada = nuevo;
-                            _madreEsInterna = true;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
               if (_tipoPruebaPaterna == 'Transferencia de embriones') ...[
                 const SizedBox(height: 16),
                 CustomTextField(
@@ -1035,8 +1068,6 @@ class _AnimalFormState extends State<AnimalForm> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildFincaCascadeDropdown(),
-              const SizedBox(height: 14),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isWide = constraints.maxWidth > 680;

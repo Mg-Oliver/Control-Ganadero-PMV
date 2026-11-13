@@ -43,17 +43,15 @@ void main() {
     CategoriaRulesService.updateInstance(CategoriaRulesService());
   });
   testWidgets(
-    'tres filas iniciales en el orden solicitado, sin banner ni módulos',
+    'explotación y finca, identificación y progenitores en el orden solicitado',
     (tester) async {
       await abrir(tester);
       final filas = [
+        [lista('Tipo de Explotación'), lista('Finca Actual')],
         [caja('Código de animal'), caja('Arete oficial'), caja('Nombre')],
+        [lista('Seleccionar padre'), lista('Seleccionar madre (vaca)')],
         [lista('Sexo'), caja('Fecha de Nacimiento'), find.text('Edad actual')],
-        [
-          find.text('Categoría'),
-          lista('Tipo de Explotación'),
-          lista('Origen del Animal'),
-        ],
+        [find.text('Categoría'), lista('Origen del Animal')],
       ];
       double anterior = -1;
       for (final fila in filas) {
@@ -67,10 +65,12 @@ void main() {
           tester.getTopLeft(fila[1]).dx,
           greaterThan(tester.getTopLeft(fila[0]).dx),
         );
-        expect(
-          tester.getTopLeft(fila[2]).dx,
-          greaterThan(tester.getTopLeft(fila[1]).dx),
-        );
+        if (fila.length > 2) {
+          expect(
+            tester.getTopLeft(fila[2]).dx,
+            greaterThan(tester.getTopLeft(fila[1]).dx),
+          );
+        }
       }
       expect(
         find.text('Apertura de Expediente Individual Bovino'),
